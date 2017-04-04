@@ -304,7 +304,12 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
     echo -e "${PURPLE_BLUE}  + "
     echo -e "${PURPLE_BLUE}  + ${RED} phantomjs is required by some tests "
     echo -e "${PURPLE_BLUE}  + "
-    echo -e "${PURPLE_BLUE}  + Please install of make available in your path like sudo apt-get install phantomjs -y "
+    echo -e "${PURPLE_BLUE}  + Please install of make available in your path like
+          ${BRIGHT_BLUE87} npm -g install phantomjs-prebuilt
+          ${PURPLE_BLUE} or
+          ${BRIGHT_BLUE87} npm -g install phantomjs2
+          ${PURPLE_BLUE} or
+          ${BRIGHT_BLUE87} sudo apt-get install phantomjs -y "
     echo -e "${PURPLE_BLUE}  + "
     echo -e "${PURPLE_BLUE}  + These are the tests that require phantomjs:"
     echo -e "${PURPLE_BLUE}  + "
@@ -352,7 +357,7 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
 
 
   # PERFORM TESTS
-  ALL_INTEGRATION_TESTS=$(find * -type f -name "*.feature")
+  ALL_CUCUMBER_TESTS=$(find * -type f -name "*.feature")
 #  ALL_CUCUMBER_TESTS="features/sms_resilience.feature
 #features/admin/support_inquiry_interface.feature
 #features/inquiry_dispatch.feature
@@ -419,12 +424,68 @@ ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
 }
 else # -z ${1}
 {
+  echo -e "${PURPLE_BLUE}  + ${CYAN}:"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}:"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}:  TESTS were given       "
+  echo -e "${PURPLE_BLUE}  + ${CYAN}:"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}:"
+
   echo " "
   echo "Perform Tests"
   echo " "
   # PERFORM TESTS
-  ruby -I"lib:test" -I"${RAKE_LIB_FOLDER}" "${LOCATION_RAKE_LIB}" "${1}"
+  #ruby -I"lib:test" -I"${RAKE_LIB_FOLDER}" "${LOCATION_RAKE_LIB}" "${1}"
+  INTEGRATION_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_test\.rb")
+  if [[ -z "${INTEGRATION_TESTS_EXISTS}" ]] ; then
+  {
+      ##### REAPEAT START
+      echo -e "${PURPLE_BLUE}  + "
+      echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} INTEGRATION"
+      echo -e "${PURPLE_BLUE}  + "
 
+      export GOOGLE_API_KEY="x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1xx1x1"
+      export GOOGLE_CLIENT_ID="012345678900-gmk2gmk2gmk2gmk2gmk2gmk2gmk2gmk2.apps.googleusercontent.com"
+      export GOOGLE_CLIENT_SECRET="QuerbyQuerbyErgoIpsonHop"
+      export GOOGLE_EMAIL_DOMAIN="weise.box"
+
+      LOAD_TEMP_KEYS="# Empty script"
+      [ -f .temp_keys ] && LOAD_TEMP_KEYS=$(<.temp_keys)
+      eval "${LOAD_TEMP_KEYS}"
+
+      echo -e "${PURPLE_BLUE}  + TEMP KEYS NEED IT FOR: test/integration/inquiry_plugin_integration_test.rb"
+      echo -e "${PURPLE_BLUE}  + "
+      echo -e "${PURPLE_BLUE}  + GOOGLE_API_KEY      :${GRAY241}${GOOGLE_API_KEY}"
+      echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_ID    :${GRAY241}${GOOGLE_CLIENT_ID}"
+      echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_SECRET:${GRAY241}${GOOGLE_CLIENT_SECRET}"
+      echo -e "${PURPLE_BLUE}  + GOOGLE_EMAIL_DOMAIN :${GRAY241}${GOOGLE_EMAIL_DOMAIN}"
+      echo -e "${PURPLE_BLUE}  + "
+      echo -e "${PURPLE_BLUE}  + ${CYAN}ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\" \"${LOCATION_RAKE_LIB}\" ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RED}"
+      echo -e "${PURPLE_BLUE}  + ${RED}"
+      eval "ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\" \"${LOCATION_RAKE_LIB}\" " ${INTEGRATION_TESTS_EXISTS}
+      #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+      echo -e "${PURPLE_BLUE}  + ${RESET}"
+      echo -e "${PURPLE_BLUE}  + ${RESET}"
+      ##### REAPEAT  END
+      eval "ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\" \"${LOCATION_RAKE_LIB}\" " ${INTEGRATION_TESTS_EXISTS}
+      echo -e "${PURPLE_BLUE}  + ${RESET}"
+      echo -e "${PURPLE_BLUE}  + ${RESET}"
+  }
+  fi
+
+  CUCUMBER_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "\.feature")
+  if [[ -z "${CUCUMBER_TESTS_EXISTS}" ]] ; then
+  {
+      echo -e "${PURPLE_BLUE}  + "
+      echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} CUCUMBER"
+      echo -e "${PURPLE_BLUE}  + "
+      echo -e "${PURPLE_BLUE}  + "
+      echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec cucumber ${YELLOW220}${CUCUMBER_TESTS_EXISTS}${RED}"
+      echo -e "${PURPLE_BLUE}  + ${RED}"
+      eval "bundle exec cucumber ${CUCUMBER_TESTS_EXISTS}"
+      echo -e "${PURPLE_BLUE}  + ${RESET}"
+      echo -e "${PURPLE_BLUE}  + ${RESET}"
+    }
+  fi
 
 }
 fi

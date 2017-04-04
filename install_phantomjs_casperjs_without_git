@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# @author Zeus Intuivo <zeus@intuivo.com>
+#
+#
+# Inspired by:
+# Script to install NVM, Node, PhantomJS and CasperJS without installing or using git.
+# REF: https://gist.github.com/navio/7443018
+type_function_exists() {
+  type "$1" > /dev/null 2>&1
+}
+nvm_reload() {
+	if [ -d $HOME/.nvm/ ]; then   #check for direc existance and attempt to load
+	{
+		# NVM
+		export NVM_DIR="$HOME/.nvm"
+		[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+	}
+	fi
+}
+if ! type_function_exists nvm; then
+{
+	nvm_reload
+	if ! type_function_exists nvm; then   #test again
+	{
+	    printf "Installing NVM %s\n" >&2
+	    curl https://raw.github.com/creationix/nvm/master/install-gitless.sh | sh;
+	    wait
+	    # NVM
+		export NVM_DIR="$HOME/.nvm"
+		[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+	}
+	fi
+	nvm ls
+}
+fi
+wait
+
+# Installing Node! | Will skip if already exist
+source $HOME/.bash_profile;
+cd $HOME;
+if ! type_function_exists node; then
+{
+	nvm install stable;
+}
+fi
+wait
+
+export NODE_VERSION=$(node --version);
+
+echo 'Node -v ${NODE_VERSION} Installation Complete';
+
+#Installing PhantomJS! | Will skip if already exist
+source $HOME/.bash_profile;
+npm -g install phantomjs-prebuilt;
+wait
+npm -g install phantomjs2;
+wait
+echo 'PhantomJS Installation Complete';
+
+# Downloading CasperJS! Latest Dev Version
+CURRENT_NODE_HOME=$HOME/.nvm/versions/node/$NODE_VERSION/
+cd $CURRENT_NODE_HOME/lib/node_modules;
+wget https://github.com/n1k0/casperjs/zipball/master;
+unzip master;
+mv *casperjs* casperjs;
+cd $CURRENT_NODE_HOME/bin;
+ln -s $CURRENT_NODE_HOME/lib/node_modules/casperjs/bin/casperjs casperjs;
+source $HOME/.bash_profile;
+wait
+echo 'CasperJS Installation Complete';
+
+# Verify Installation - Prompt with Alert if Problems.
+commands_tocheck="nvm phantomjs casperjs"
+missing_counter=0;
+
+for needed_command in $commands_tocheck; do
+{
+  	if ! type_function_exists "$needed_command"; then
+	{
+	    printf "Command not found in PATH: %s\n" "$needed_command" >&2
+	    ((missing_counter++))
+	}
+  	fi
+}
+done
+
+if ((missing_counter > 0)); then
+{
+  printf "There was something wrong with the installation. Please contact the Reference Store Team" >&2
+  exit 1
+}
+fi
+
+# Alert of Installation Completition.
+echo >&2 "Dependecies Installation Complete Downloading JUTS "
