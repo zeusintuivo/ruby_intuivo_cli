@@ -89,7 +89,7 @@ echo -e "  +-- ${CYAN} Locating files that changes in this branch "
 echo -e "${PURPLE_BLUE}  +${GRAY241}"
 
 FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
-FILES2=$(git status -sb | egrep -v "##" | cut -c4- | egrep -v "\.csv|\.sh|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
+FILES2=$(git status -sb | egrep -v "##" | cut -c4- | egrep -v "\.temp_keys|\.csv|\.sh|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
 FILES="${FILES1}
 ${FILES2}"
 
@@ -178,10 +178,18 @@ else
     fi
   }
   done <<< "${ALL_FILERS}"
-  #echo "${FILES}" | sort -n | uniq | xargs bundle exec rubocop -a
+  echo "${FILES}" | sort -n | uniq | xargs bundle exec rubocop -a
+  if (( $? != 0 )) ;  then
+  {
+    echo -e "${PURPLE_BLUE}  + ${RED} Rubocop errors. Please fix  "
+    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+    exit 130;
+  }
+  fi
   echo -e "${PURPLE_BLUE}~~+${SPACER}+~~"
   echo -e "  +${SPACER}+ "
-  }
+}
 fi
   echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
 
@@ -204,7 +212,7 @@ RAKE_LIB_FOLDER=$(echo ${RAKELOADER_LIB_FOLDER%/*})
 
 if [ -z "${1}" ] ; then
 {
-  echo -e "${PURPLE_BLUE}  + ${RED}No test was passed"
+  echo -e "${PURPLE_BLUE}  + ${RED}No specific test was listed "
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
   echo -e "${PURPLE_BLUE}  + ${CYAN}SAMPLE:"
   echo -e "${PURPLE_BLUE}  + ${CYAN}        ./check.sh test/lib/tasks/cleanup_email_test.rb"
@@ -215,34 +223,35 @@ if [ -z "${1}" ] ; then
   echo "      RAKE_LIB_FOLDER : $RAKE_LIB_FOLDER"
 
   # PERFORM TESTS
-  ALL_INTEGRATION_TESTS="test/models/insurance_test.rb
-test/workers/twilio_cleaner_worker_test.rb
-test/controllers/account/doctors_controller_test.rb
-test/controllers/doctors/specialties_controller_test.rb
-test/workers/dtms_cleaner_worker_test.rb
-test/controllers/accounts_controller_test.rb
-test/integration/inquiry_plugin_integration_test.rb
-test/controllers/inquiries/confirmations_controller_test.rb
-test/integration/practice_integration_test.rb
-test/services/unprocessed_bookings_test.rb
-test/mailers/user_mailer_test.rb
-test/validators/partner_token_validator_test.rb
-test/models/timeslot_test.rb
-test/lib/tasks/cleanup_email_test.rb
-test/lib/tasks/cleanup_sms_test.rb
-test/models/account_test.rb
-test/models/booking_test.rb
-test/integration/patient_flows_test.rb
-test/controllers/account_backend_controller_test.rb
-test/lib/tasks/unprocessed_bookings_reminders_test.rb
-test/models/inquiry_test.rb
-test/models/partner_test.rb
-test/mailers/smser_test.rb
-test/controllers/directory_controller_test.rb
-test/controllers/account/calendars_controller_test.rb
-test/models/patient_test.rb
-test/integration/review_integration_test.rb
-services/place_service/tests/address_serializer_test.rb"
+  ALL_INTEGRATION_TESTS=$(find * -type f -name "*_test.rb")
+#  ALL_INTEGRATION_TESTS="test/models/insurance_test.rb
+#test/workers/twilio_cleaner_worker_test.rb
+#test/controllers/account/doctors_controller_test.rb
+#test/controllers/doctors/specialties_controller_test.rb
+#test/workers/dtms_cleaner_worker_test.rb
+#test/controllers/accounts_controller_test.rb
+#test/integration/inquiry_plugin_integration_test.rb
+#test/controllers/inquiries/confirmations_controller_test.rb
+#test/integration/practice_integration_test.rb
+#test/services/unprocessed_bookings_test.rb
+#test/mailers/user_mailer_test.rb
+#test/validators/partner_token_validator_test.rb
+#test/models/timeslot_test.rb
+#test/lib/tasks/cleanup_email_test.rb
+#test/lib/tasks/cleanup_sms_test.rb
+#test/models/account_test.rb
+#test/models/booking_test.rb
+#test/integration/patient_flows_test.rb
+#test/controllers/account_backend_controller_test.rb
+#test/lib/tasks/unprocessed_bookings_reminders_test.rb
+#test/models/inquiry_test.rb
+#test/models/partner_test.rb
+#test/mailers/smser_test.rb
+#test/controllers/directory_controller_test.rb
+#test/controllers/account/calendars_controller_test.rb
+#test/models/patient_test.rb
+#test/integration/review_integration_test.rb
+#services/place_service/tests/address_serializer_test.rb"
 
 
   INTEGRATION_TESTS_EXISTS=""
@@ -343,15 +352,16 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
 
 
   # PERFORM TESTS
-  ALL_CUCUMBER_TESTS="features/sms_resilience.feature
-features/admin/support_inquiry_interface.feature
-features/inquiry_dispatch.feature
-features/publishers/custom_checkout_template.feature
-features/admin/admin_booking_interface.feature
-features/admin/practice_management.feature
-features/review.feature
-features/times.feature
-features/account/inquiry_management.feature"
+  ALL_INTEGRATION_TESTS=$(find * -type f -name "*.feature")
+#  ALL_CUCUMBER_TESTS="features/sms_resilience.feature
+#features/admin/support_inquiry_interface.feature
+#features/inquiry_dispatch.feature
+#features/publishers/custom_checkout_template.feature
+#features/admin/admin_booking_interface.feature
+#features/admin/practice_management.feature
+#features/review.feature
+#features/times.feature
+#features/account/inquiry_management.feature"
 
 
 
