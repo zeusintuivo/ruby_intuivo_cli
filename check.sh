@@ -89,7 +89,7 @@ echo -e "  +-- ${CYAN} Locating files that changes in this branch "
 echo -e "${PURPLE_BLUE}  +${GRAY241}"
 
 FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
-FILES2=$(git status -sb | egrep -v "##" | cut -c4- | egrep -v "\.temp_keys|\.csv|\.sh|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
+FILES2=$(git status -sb | egrep -v "##" | cut -c4- | egrep -v "\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
 FILES="${FILES1}
 ${FILES2}"
 
@@ -198,6 +198,28 @@ fi
 
 # Then get folder based on ruby version 2.2.5 and rake version 10.5.0 used for development
 LOCATION_RAKE_LIB=$(locate test_loader.rb | grep "rake-10.5.0/lib" | grep "ruby-2.2.5")
+
+if [ -z "${LOCATION_RAKE_LIB}" ] ; then
+{
+  echo -e "${PURPLE_BLUE}  + ${YELLOW220}WARNING COULD NOT FIND  test_loader.rb "
+  echo -e "${PURPLE_BLUE}  + ${CYAN}"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}Attempting to run ${YELLOW220} sudo updatedb "
+  sudo updatedb
+  wait
+  echo -e "${PURPLE_BLUE}  + ${CYAN}"
+  echo -e "${PURPLE_BLUE}  + ${YELLOW220} Attempting to find test_loader.rb  again"
+  LOCATION_RAKE_LIB=$(locate test_loader.rb | grep "rake-10.5.0/lib" | grep "ruby-2.2.5")
+  wait
+  if [ -z "${LOCATION_RAKE_LIB}" ] ; then
+  {
+    echo -e "${PURPLE_BLUE}  + ${RED}DID NOT FIND test_loader.rb "
+    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+    echo -e "${PURPLE_BLUE}  + ${CYAN} I Will keep running but this could cause it not to run. ${YELLOW220}Cross fingers"
+    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+  }
+  fi
+}
+fi
 RAKELOADER_LIB_FOLDER=$(echo ${LOCATION_RAKE_LIB%/*})
 RAKE_LIB_FOLDER=$(echo ${RAKELOADER_LIB_FOLDER%/*})
 
@@ -212,10 +234,15 @@ RAKE_LIB_FOLDER=$(echo ${RAKELOADER_LIB_FOLDER%/*})
 
 if [ -z "${1}" ] ; then
 {
-  echo -e "${PURPLE_BLUE}  + ${RED}No specific test was listed "
+  echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}"
+  echo -e "${PURPLE_BLUE}  + ${YELLOW220} No specific test was listed "
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
   echo -e "${PURPLE_BLUE}  + ${CYAN}SAMPLE:"
   echo -e "${PURPLE_BLUE}  + ${CYAN}        ./check.sh test/lib/tasks/cleanup_email_test.rb"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}"
+  echo -e "${PURPLE_BLUE}  + ${YELLOW220} SO I WILL RUN ALL THE TESTS: All the integrations, and all the cucumbers  "
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
   echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
   echo "    LOCATION_RAKE_LIB : $LOCATION_RAKE_LIB"
@@ -429,14 +456,16 @@ else # -z ${1}
   echo -e "${PURPLE_BLUE}  + ${CYAN}:  TESTS were given       "
   echo -e "${PURPLE_BLUE}  + ${CYAN}:"
   echo -e "${PURPLE_BLUE}  + ${CYAN}:"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}:"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}:"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}:  Performing Tests      "
+  echo -e "${PURPLE_BLUE}  + ${CYAN}:"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}:"
 
-  echo " "
-  echo "Perform Tests"
-  echo " "
   # PERFORM TESTS
   #ruby -I"lib:test" -I"${RAKE_LIB_FOLDER}" "${LOCATION_RAKE_LIB}" "${1}"
   INTEGRATION_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_test\.rb")
-  if [[ -z "${INTEGRATION_TESTS_EXISTS}" ]] ; then
+  if [[ ! -z "${INTEGRATION_TESTS_EXISTS}" ]] ; then
   {
       ##### REAPEAT START
       echo -e "${PURPLE_BLUE}  + "
@@ -473,18 +502,18 @@ else # -z ${1}
   fi
 
   CUCUMBER_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "\.feature")
-  if [[ -z "${CUCUMBER_TESTS_EXISTS}" ]] ; then
+  if [[ ! -z "${CUCUMBER_TESTS_EXISTS}" ]] ; then
   {
       echo -e "${PURPLE_BLUE}  + "
       echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} CUCUMBER"
       echo -e "${PURPLE_BLUE}  + "
-      echo -e "${PURPLE_BLUE}  + "
+      echo -e "${PURPLE_BLUE}  + "sed 's/ /\n/g' | grep -e "\.feature"
       echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec cucumber ${YELLOW220}${CUCUMBER_TESTS_EXISTS}${RED}"
       echo -e "${PURPLE_BLUE}  + ${RED}"
       eval "bundle exec cucumber ${CUCUMBER_TESTS_EXISTS}"
       echo -e "${PURPLE_BLUE}  + ${RESET}"
       echo -e "${PURPLE_BLUE}  + ${RESET}"
-    }
+  }
   fi
 
 }
