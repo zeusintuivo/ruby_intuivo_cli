@@ -242,7 +242,7 @@ if [ -z "${1}" ] ; then
   echo -e "${PURPLE_BLUE}  + ${CYAN}SAMPLE:"
   echo -e "${PURPLE_BLUE}  + ${CYAN}        ./check.sh test/lib/tasks/cleanup_email_test.rb"
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
-  echo -e "${PURPLE_BLUE}  + ${YELLOW220} SO I WILL RUN ALL THE TESTS: All the integrations, and all the cucumbers  "
+  echo -e "${PURPLE_BLUE}  + ${YELLOW220} SO I WILL RUN ALL THE TESTS: All the ${RED} integrations, and all the ${RED}cucumbers  "
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
   echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
   echo "    LOCATION_RAKE_LIB : $LOCATION_RAKE_LIB"
