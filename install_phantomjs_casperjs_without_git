@@ -53,9 +53,13 @@ load_colors_script_name_and_break_trap() {
 load_struct_testing(){
     EXECOMCLI=$(wget --quiet --no-check-certificate https://raw.githubusercontent.com/zeusintuivo/execute_command_intuivo_cli/master/struct_testing -O -  2>/dev/null )   # suppress only curl download messages, but keep curl output for variable
     eval """${EXECOMCLI}"""
+    #echo """${EXECOMCLI}""" | grep is_not_installed
+    #echo """${EXECOMCLI}"""
+
+    ( ( ! command -v passed >/dev/null 2>&1; ) && echo -e "\n \n  ERROR! Loading struct_testing \n \n " && exit 130; )
+    #exit 130;
 
     # verify
-    ( ( ! command -v type passed >/dev/null 2>&1; ) && echo -e "\n \n  ERROR! Loading struct_testing \n \n " && exit 130; )
 } # end function load_struct_testing
 
 
@@ -134,6 +138,17 @@ nvm_install() {
 
 } # end nvm_install
 
+source_nvm() {
+    cd $HOME;
+    ( [ -f  .bash_profile ] && [[ -z $(cat .bash_profile | egrep "nvm") ||  -z $(cat .bash_profile | egrep "NVM") ]]  && source .bash_profile ) \
+     ||
+    ( [ -f  .bashrc ] && [[ -z $(cat .bashrc | egrep "nvm") ||  -z $(cat .bashrc | egrep "NVM") ]]  && source .bashrc ) \
+     ||
+    ( [ -f  .profile ] && [[ -z $(cat .profile | egrep "nvm") ||  -z $(cat .profile | egrep "NVM") ]]  && source .profile ) \
+     ||
+    ( [ -f  .zshrc ] && [[ -z $(cat .zshrc | egrep "nvm") ||  -z $(cat .zshrc | egrep "NVM") ]]  && source .zshrc )
+
+} # end source_nvm
 
 node_install() {
     local node_version=""
@@ -152,15 +167,7 @@ node_install() {
     else
     {
         echo "        # Installing Node! | Will skip if already exist"
-        cd $HOME;
-        ( [ -f  .bash_profile ] && [[ -z $(cat .bash_profile | egrep "nvm") ||  -z $(cat .bash_profile | egrep "NVM") ]]  && source .bash_profile ) \
-         ||
-        ( [ -f  .bashrc ] && [[ -z $(cat .bashrc | egrep "nvm") ||  -z $(cat .bashrc | egrep "NVM") ]]  && source .bashrc ) \
-         ||
-        ( [ -f  .profile ] && [[ -z $(cat .profile | egrep "nvm") ||  -z $(cat .profile | egrep "NVM") ]]  && source .profile ) \
-         ||
-        ( [ -f  .zshrc ] && [[ -z $(cat .zshrc | egrep "nvm") ||  -z $(cat .zshrc | egrep "NVM") ]]  && source .zshrc )
-
+        source_nvm
         if ! type_function_exists node; then
         {
             nvm install stable;
@@ -187,7 +194,7 @@ phantomjs_install() {
     if [ ! -z "${phantomjs_version}" ] ;  then
     {
         echo "        # Installing PhantomJS version ${phantomjs_version}. "
-        source $HOME/.bash_profile;
+        source_nvm
         npm -g install phantomjs@"${phantomjs_version}"
         wait
     }
@@ -195,7 +202,7 @@ phantomjs_install() {
     {
         phantomjs_version="LASTEST"
         echo "        # Installing ${phantomjs_version} PhantomJS ! |  phantomjs-prebuilt; phantomjs2;"
-        source $HOME/.bash_profile;
+        source_nvm
         npm -g install phantomjs-prebuilt;
         wait
         npm -g install phantomjs2;
@@ -216,7 +223,7 @@ casper_install() {
     mv *casperjs* casperjs;
     cd $CURRENT_NODE_HOME/bin;
     ln -s $CURRENT_NODE_HOME/lib/node_modules/casperjs/bin/casperjs casperjs;
-    source $HOME/.bash_profile;
+    source_nvm
     wait
 
     echo 'CasperJS Installation Complete';
