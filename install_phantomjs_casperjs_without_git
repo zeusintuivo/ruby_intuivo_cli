@@ -53,11 +53,11 @@ load_colors_script_name_and_break_trap() {
 load_struct_testing(){
     EXECOMCLI=$(wget --quiet --no-check-certificate https://raw.githubusercontent.com/zeusintuivo/execute_command_intuivo_cli/master/struct_testing -O -  2>/dev/null )   # suppress only curl download messages, but keep curl output for variable
     eval """${EXECOMCLI}"""
-    #echo """${EXECOMCLI}""" | grep is_not_installed
+    #echo """${EXECOMCLI}""" | grep verify_installed_version
     #echo """${EXECOMCLI}"""
+    #exit 130;
 
     ( ( ! command -v passed >/dev/null 2>&1; ) && echo -e "\n \n  ERROR! Loading struct_testing \n \n " && exit 130; )
-    #exit 130;
 
     # verify
 } # end function load_struct_testing
@@ -210,21 +210,57 @@ phantomjs_install() {
     }
     fi
 
-    echo  "PhantomJS ${phantomjs_version} version isntall complete";
+    echo  "PhantomJS ${phantomjs_version} version install complete";
 } # end phantomjs_install
 
 
 casper_install() {
-    # Downloading CasperJS! Latest Dev Version
-    CURRENT_NODE_HOME=$HOME/.nvm/versions/node/$NODE_VERSION/
+    local casper_version=""
+    if [ ! -z "${1}" ] ;  then
+        casper_version="${1}"
+    fi
+
+    if [[ -z "${NODE_VERSION}" ]] ;  then
+        fail "I am missing NODE_VERSION var"
+    fi
+
+    CURRENT_NODE_HOME="${HOME}"/.nvm/versions/node/"${NODE_VERSION}"/
+
+    if [[ "${CURRENT_NODE_HOME}" == "${HOME}/.nvm/versions/node//" ]] ;  then
+        fail "I am missing CURRENT_NODE_HOME var"
+    fi
+
     cd $CURRENT_NODE_HOME/lib/node_modules;
-    wget https://github.com/n1k0/casperjs/zipball/master;
-    unzip master;
-    mv *casperjs* casperjs;
-    cd $CURRENT_NODE_HOME/bin;
-    ln -s $CURRENT_NODE_HOME/lib/node_modules/casperjs/bin/casperjs casperjs;
+
+    if [ ! -z "${casper_version}" ] ;  then
+    {
+        echo "        # Installing CasperJS version ${casper_version}. "
+        git clone https://github.com/casperjs/casperjs.git casperjs
+        cd casperjs-casperjs-"${casper_version}"
+        wait
+        git checkout -b test remotes/origin/"${casper_version}"  # How to do a “git checkout -b <branchname>” from a remote tag REF: https://stackoverflow.com/questions/7572647/how-to-do-a-git-checkout-b-branchname-from-a-remote-tag
+        wait
+        cd ..
+        wait
+    }
+    else
+    {
+        casper_version="LASTEST"
+        echo "        # Installing ${casper_version} CasperJS ! |  # Downloading CasperJS! Latest Dev Version;"
+        wget https://github.com/n1k0/casperjs/zipball/master;
+        wait
+        unzip master;
+        wait
+        mv *casperjs* casperjs;   # RENAME
+        # clean up
+        rm master
+
+    }
+    fi
+
+    cd "${CURRENT_NODE_HOME}"/bin;
+    ln -s "${CURRENT_NODE_HOME}"/lib/node_modules/casperjs/bin/casperjs casperjs;
     source_nvm
-    wait
 
     echo 'CasperJS Installation Complete';
 
@@ -233,29 +269,38 @@ casper_install() {
 
 verify_installations() {
     # Verify Installation - Prompt with Alert if Problems.
-    commands_tocheck="nvm phantomjs casperjs"
-    missing_counter=0;
+    local commands_tocheck="nvm npm node phantomjs casperjs"
+    local missing_counter=0;
+    local needed_command
 
-    for needed_command in $commands_tocheck; do
+    for needed_command in ${commands_tocheck}; do
     {
-          if ! type_function_exists "$needed_command"; then
+        if ! type_function_exists "${needed_command}"; then
         {
-            printf "Command not found in PATH: %s\n" "$needed_command" >&2
+            printf "Command not found in PATH: %s\n" "${needed_command}" >&2
             ((missing_counter++))
         }
-          fi
+        fi
     }
     done
 
     if ((missing_counter > 0)); then
     {
-      printf "There was something wrong with the installation. Please contact the Reference Store Team" >&2
-      exit 1
+        for needed_command in $commands_tocheck; do
+        {
+            verify_is_installed "${needed_command}"
+        }
+        done
+
+        printf "There was something wrong with the installation." >&2
+        exit 1
     }
     fi
 
     # Alert of Installation Completition.
-    echo >&2 "Dependecies Installation Complete Downloading. "
+
+
+    echo >&2 "Install process ended. "
 
 } # end verify_installations
 
@@ -267,9 +312,14 @@ ${GRAYEDOUT} ${THISSCRIPTNAME} Installs nvm, npm, phantomjs and caspterjs
 
     Usage
 
-         ${THISSCRIPTNAME}  1.9.8     ---> will install nvm, node, and phantomjs version 1.9.8, and caspterjs
+        ${THISSCRIPTNAME}  [phantomjs_version]  [nodejs_version]  [casperjs_version]     ---> all optional
 
-         ${THISSCRIPTNAME}            ---> will install nvm, node, and phantomjs lastest       , and caspterjs
+
+         ${THISSCRIPTNAME}  1.9.8                     ---> will install nvm, node version stable, and phantomjs version 1.9.8, and caspterjs version master(dev)
+
+         ${THISSCRIPTNAME}                            ---> will install nvm, node version stable, and phantomjs lastest      , and caspterjs version master(dev)
+
+         ${THISSCRIPTNAME}  1.9.8    7.7.2    1.1.4   ---> will install nvm, node version v7.7.2, and phantomjs version 1.9.8, and caspterjs version 1.1.4
     "
 } # end display_help
 
@@ -298,13 +348,25 @@ ${GRAYEDOUT} ${THISSCRIPTNAME} Installs nvm, npm, phantomjs and caspterjs
 
 
 phantomjs_version="1.9.8"
+test_phantomjs_version=""
 if [ ! -z "${1}" ] ;  then
     phantomjs_version="${1}"
+    test_phantomjs_version="${1}"
 fi
 
 node_version="stable"
+test_node_version=""
 if [ ! -z "${2}" ] ;  then
     node_version="${2}"
+    test_node_version="${2}"
+fi
+
+casper_version="1.1.4"
+casper_version=""
+test_casper_version=""
+if [ ! -z "${3}" ] ;  then
+    casper_version="${3}"
+    test_casper_version="${3}"
 fi
 
 
@@ -317,5 +379,11 @@ check_wget_or_curl_are_installed
 nvm_install
 node_install "${node_version}"
 phantomjs_install "${phantomjs_version}"
-casper_install
+casper_install "${casper_version}"
+
 verify_installations
+
+[[ ! -z "${test_node_version}" ]] && verify_installed_version "node --version"  "${test_node_version}"
+[[ ! -z "${test_phantomjs_version}" ]] && verify_installed_version "phantomjs --version"  "${test_phantomjs_version}"
+[[ ! -z "${test_casper_version}" ]] && verify_installed_version "casperjs --version"  "${test_casper_version}"
+
