@@ -29,9 +29,40 @@
 ### PROCEDURTES, DEFS, FUNCTIONS: WHATEVERS ####
 #                                              #
 #                                              #
+
+
+load_colors_script_name_and_break_trap() {
+
+    GRAYEDOUT="\033[01;30m"
+    RED="\033[01;31m"
+    GREEN="\033[01;32m"
+    YELLOW="\033[01;33m"
+    DARKBLUE="\033[01;34m"
+    PURPLE="\033[01;35m"
+    CYAN="\033[01;36m"
+    WHITEBOLD="\033[01;37m"
+    CERO="\033[01;0m"
+
+    # TRAP
+    trap '{  \" KEYBOARD INTERRUPT.\"; exit 130; }' INT
+
+    THISSCRIPTNAME=`basename "$0"`
+} # end load_colors_script_name_and_break_trap
+
+
+load_struct_testing(){
+    EXECOMCLI=$(wget --quiet --no-check-certificate https://raw.githubusercontent.com/zeusintuivo/execute_command_intuivo_cli/master/struct_testing -O -  2>/dev/null )   # suppress only curl download messages, but keep curl output for variable
+    eval """${EXECOMCLI}"""
+
+    # verify
+    ( ( ! command -v type passed >/dev/null 2>&1; ) && echo -e "\n \n  ERROR! Loading struct_testing \n \n " && exit 130; )
+} # end function load_struct_testing
+
+
 type_function_exists() {
   type "$1" > /dev/null 2>&1
 } # type_function_exists
+
 
 nvm_reload() {
     if [ -d $HOME/.nvm/ ]; then   #check for direc existance and attempt to load
@@ -43,6 +74,45 @@ nvm_reload() {
     fi
 } # nvm_reload
 
+
+install_nvm_wget() {
+    ( command -v wget >/dev/null 2>&1; ) &&  wget --no-check-certificate https://raw.githubusercontent.com/creationix/nvm/v0.33.1/install.sh  -O - | bash
+} # end install_nvm_wget
+
+
+install_nvm_curl() {
+    ( command -v curl >/dev/null 2>&1; ) &&  curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.1/install.sh | bash
+} # end install_nvm_curl
+
+
+install_nvm_decide_between_curl() {
+
+    if  is_installed wget ; then
+    {
+        install_nvm_wget
+    }
+    elif is_installed curl ; then
+    {
+        install_nvm_curl
+    }
+    fi
+} # end install_nvm_decide_between_curl
+
+
+check_wget_or_curl_are_installed() {
+    if  is_not_installed wget ; then
+    {
+        sudo apt-get install wget -y
+    }
+    elif is_not_installed curl ; then
+    {
+        sudo apt-get install curl -y
+    }
+    fi
+
+} # end check_wget_or_curl_are_installed
+
+
 nvm_install() {
     if ! type_function_exists nvm; then
     {
@@ -50,7 +120,7 @@ nvm_install() {
         if ! type_function_exists nvm; then   #test again
         {
             printf "Installing NVM %s\n" >&2
-            curl https://raw.github.com/creationix/nvm/master/install-gitless.sh | sh;
+            install_nvm_decide_between_curl
             wait
             # NVM
             export NVM_DIR="$HOME/.nvm"
@@ -62,24 +132,51 @@ nvm_install() {
     fi
     wait
 
-} # end check_nvm
+} # end nvm_install
+
 
 node_install() {
-    # Installing Node! | Will skip if already exist
-    source $HOME/.bash_profile;
-    cd $HOME;
-    if ! type_function_exists node; then
+    local node_version=""
+    if [ ! -z "${1}" ] ;  then
+        node_version="${1}"
+    fi
+    if [ ! -z "${node_version}" ] ;  then
     {
-        nvm install stable;
+        if ! type_function_exists node; then
+        {
+            nvm install "${node_version}";
+        }
+        fi
+        wait
+    }
+    else
+    {
+        echo "        # Installing Node! | Will skip if already exist"
+        cd $HOME;
+        ( [ -f  .bash_profile ] && [[ -z $(cat .bash_profile | egrep "nvm") ||  -z $(cat .bash_profile | egrep "NVM") ]]  && source .bash_profile ) \
+         ||
+        ( [ -f  .bashrc ] && [[ -z $(cat .bashrc | egrep "nvm") ||  -z $(cat .bashrc | egrep "NVM") ]]  && source .bashrc ) \
+         ||
+        ( [ -f  .profile ] && [[ -z $(cat .profile | egrep "nvm") ||  -z $(cat .profile | egrep "NVM") ]]  && source .profile ) \
+         ||
+        ( [ -f  .zshrc ] && [[ -z $(cat .zshrc | egrep "nvm") ||  -z $(cat .zshrc | egrep "NVM") ]]  && source .zshrc )
+
+        if ! type_function_exists node; then
+        {
+            nvm install stable;
+        }
+        fi
+        wait
+
     }
     fi
-    wait
+
 
     export NODE_VERSION=$(node --version);
-
-    echo 'Node -v ${NODE_VERSION} Installation Complete';
+    echo "Node -v ${NODE_VERSION} Installation Complete";
 
 } # end node_install
+
 
 phantomjs_install() {
 
@@ -89,14 +186,15 @@ phantomjs_install() {
     fi
     if [ ! -z "${phantomjs_version}" ] ;  then
     {
-        echo "        #Installing LASTEST PhantomJS ! |  phantomjs-prebuilt; phantomjs2;"
+        echo "        # Installing PhantomJS version ${phantomjs_version}. "
         source $HOME/.bash_profile;
         npm -g install phantomjs@"${phantomjs_version}"
         wait
     }
     else
     {
-        echo "        #Installing LASTEST PhantomJS ! |  phantomjs-prebuilt; phantomjs2;"
+        phantomjs_version="LASTEST"
+        echo "        # Installing ${phantomjs_version} PhantomJS ! |  phantomjs-prebuilt; phantomjs2;"
         source $HOME/.bash_profile;
         npm -g install phantomjs-prebuilt;
         wait
@@ -105,8 +203,9 @@ phantomjs_install() {
     }
     fi
 
-    echo  'PhantomJS Installation Complete';
+    echo  "PhantomJS ${phantomjs_version} version isntall complete";
 } # end phantomjs_install
+
 
 casper_install() {
     # Downloading CasperJS! Latest Dev Version
@@ -123,6 +222,7 @@ casper_install() {
     echo 'CasperJS Installation Complete';
 
 } # end casper_install
+
 
 verify_installations() {
     # Verify Installation - Prompt with Alert if Problems.
@@ -151,6 +251,7 @@ verify_installations() {
     echo >&2 "Dependecies Installation Complete Downloading. "
 
 } # end verify_installations
+
 
 display_help() {
     echo -e "
@@ -185,20 +286,7 @@ ${GRAYEDOUT} ${THISSCRIPTNAME} Installs nvm, npm, phantomjs and caspterjs
 #                                              #
 #                                              #
 
-GRAYEDOUT="\033[01;30m"
-RED="\033[01;31m"
-GREEN="\033[01;32m"
-YELLOW="\033[01;33m"
-DARKBLUE="\033[01;34m"
-PURPLE="\033[01;35m"
-CYAN="\033[01;36m"
-WHITEBOLD="\033[01;37m"
-CERO="\033[01;0m"
 
-# TRAP
-trap '{  \" KEYBOARD INTERRUPT.\"; exit 130; }' INT
-
-THISSCRIPTNAME=`basename "$0"`
 
 
 
@@ -207,10 +295,20 @@ if [ ! -z "${1}" ] ;  then
     phantomjs_version="${1}"
 fi
 
+node_version="stable"
+if [ ! -z "${2}" ] ;  then
+    node_version="${2}"
+fi
+
+
+load_colors_script_name_and_break_trap
 display_help
+load_struct_testing
+
+check_wget_or_curl_are_installed
 
 nvm_install
-node_install
+node_install "${node_version}"
 phantomjs_install "${phantomjs_version}"
 casper_install
 verify_installations
