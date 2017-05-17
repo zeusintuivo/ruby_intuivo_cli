@@ -195,10 +195,13 @@ fi
 
 
 
+find_location_rake_lib() {
+  # Then get folder based on ruby version 2.2.5 and rake version 10.5.0 used for development
+  LOCATION_RAKE_LIB=$(locate test_loader.rb | grep "rake-10.5.0/lib" | grep "ruby-2.2.5")  # RVM Type environment
+  [ -z "${LOCATION_RAKE_LIB}" ]  && LOCATION_RAKE_LIB=$(locate test_loader.rb | grep "rake-10.5.0/lib" | head -1 )  # Ruby compiled installed with WGET
+}
 
-# Then get folder based on ruby version 2.2.5 and rake version 10.5.0 used for development
-LOCATION_RAKE_LIB=$(locate test_loader.rb | grep "rake-10.5.0/lib" | grep "ruby-2.2.5")
-
+find_location_rake_lib
 if [ -z "${LOCATION_RAKE_LIB}" ] ; then
 {
   echo -e "${PURPLE_BLUE}  + ${YELLOW220}WARNING COULD NOT FIND  test_loader.rb "
@@ -208,7 +211,7 @@ if [ -z "${LOCATION_RAKE_LIB}" ] ; then
   wait
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
   echo -e "${PURPLE_BLUE}  + ${YELLOW220} Attempting to find test_loader.rb  again"
-  LOCATION_RAKE_LIB=$(locate test_loader.rb | grep "rake-10.5.0/lib" | grep "ruby-2.2.5")
+  find_location_rake_lib
   wait
   if [ -z "${LOCATION_RAKE_LIB}" ] ; then
   {
