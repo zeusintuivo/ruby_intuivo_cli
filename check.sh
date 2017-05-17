@@ -286,6 +286,10 @@ fi
 RAKELOADER_LIB_FOLDER=$(echo ${LOCATION_RAKE_LIB%/*})
 RAKE_LIB_FOLDER=$(echo ${RAKELOADER_LIB_FOLDER%/*})
 
+  echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
+  echo "    LOCATION_RAKE_LIB : $LOCATION_RAKE_LIB"
+  echo "RAKELOADER_LIB_FOLDER : $RAKELOADER_LIB_FOLDER"
+  echo "      RAKE_LIB_FOLDER : $RAKE_LIB_FOLDER"
 
 # ALL THE TESTS
 #ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/lib/tasks/cleanup_email_test.rb" "test/lib/tasks/cleanup_sms_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
@@ -314,10 +318,6 @@ trap interrupt_integrations INT
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
   echo -e "${PURPLE_BLUE}  + ${YELLOW220} SO I WILL RUN ALL THE TESTS: All the ${CYAN} Integrations${YELLOW220}, and all the ${CYAN}Cucumbers  "
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
-  echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
-  echo "    LOCATION_RAKE_LIB : $LOCATION_RAKE_LIB"
-  echo "RAKELOADER_LIB_FOLDER : $RAKELOADER_LIB_FOLDER"
-  echo "      RAKE_LIB_FOLDER : $RAKE_LIB_FOLDER"
 
   # PERFORM TESTS
   ALL_INTEGRATION_TESTS=$(find * -type f -name "*_test.rb")
@@ -452,7 +452,7 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
   echo -e "${PURPLE_BLUE}  + ${RESET}"
 
 } # end integrations_testing
-integrations_testing
+integrations_testing "${@}"
 
 cucumbers_testing() {
 trap interrupt_cucumbers INT
@@ -525,14 +525,14 @@ ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
   echo -e "${PURPLE_BLUE}  + ${RESET}"
 
 } # end cucumbers_testing
-cucumbers_testing
+cucumbers_testing "${@}"
 
 
 }
 else # -z ${1}
 {
   
-integrations_testing() {
+given_integrations_testing() {
 trap interrupt_integrations INT
 
   echo -e "${PURPLE_BLUE}  + ${CYAN}:"
@@ -578,17 +578,24 @@ trap interrupt_integrations INT
       #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
       echo -e "${PURPLE_BLUE}  + ${RESET}"
       echo -e "${PURPLE_BLUE}  + ${RESET}"
-      ##### REPEAT  END
-      eval "ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\" \"${LOCATION_RAKE_LIB}\" " ${INTEGRATION_TESTS_EXISTS}
-      echo -e "${PURPLE_BLUE}  + ${RESET}"
-      echo -e "${PURPLE_BLUE}  + ${RESET}"
+  }
+  else
+  {
+    echo -e "${RED}  + ${YELLOW220}:  ${CYAN} No integration tests found !     "
+    echo -e "${RED}  + ${YELLOW220}:  ${CYAN} I got this but I am looking for *_test.rb files      "
+    for ONETEST in ${@}; do 
+    {
+      echo -e "${RED}  + ${YELLOW220}:  ${CYAN} ${ONETEST}"  
+    }
+    done
+    echo -e "${RED}  + ${YELLOW220}: ..."
   }
   fi
 
-} # end integrations_testing
-integrations_testing
+} # end given_integrations_testing
+given_integrations_testing "${@}"
 
-cucumbers_testing() {
+given_cucumbers_testing() {
 trap interrupt_cucumbers INT
 
   CUCUMBER_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "\.feature")
@@ -604,9 +611,20 @@ trap interrupt_cucumbers INT
       echo -e "${PURPLE_BLUE}  + ${RESET}"
       echo -e "${PURPLE_BLUE}  + ${RESET}"
   }
+  else
+  {
+    echo -e "${RED}  + ${YELLOW220}:  ${CYAN} No cucumber tests found !     "
+    echo -e "${RED}  + ${YELLOW220}:  ${CYAN} I got this but I am looking for *.feature files      "
+    for ONETEST in ${@}; do 
+    {
+      echo -e "${RED}  + ${YELLOW220}:  ${CYAN} ${ONETEST}"  
+    }
+    done
+    echo -e "${RED}  + ${YELLOW220}: ..."
+  }
   fi
 } # end cucumbers_testing
-cucumbers_testing
+given_cucumbers_testing "${@}"
 
 } # end if not -z 1 
 fi
