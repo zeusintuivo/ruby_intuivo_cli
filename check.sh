@@ -12,6 +12,7 @@
 [[ -z "${RESET}" ]] && RESET="\\033[0m"
 [[ -z "${YELLOW220}" ]] && YELLOW220="\\033[38;5;220m"
 
+THISSCRIPTNAME=`basename "$0"`
 
 if [ ! -d .git ] ; then
 {
@@ -55,6 +56,8 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 }
 fi
+
+ 
 if command -v git_current_branch >/dev/null 2>&1; then
 {
   echo " "
@@ -76,6 +79,36 @@ else
 }
 fi
 
+add_ssspaceSSS_to_name(){
+    local ONE_FILE="${1}"
+    local FILERS=""
+    local COUNTER=0
+    local FILE_LONGEST=${2}
+    FILE_LEN="${#ONE_FILE}"
+    FILERS=" ${ONE_FILE}"
+    COUNTER=$FILE_LEN
+    (( COUNTER++ ))
+    (( COUNTER++ ))
+    until [ $COUNTER -ge $FILE_LONGEST ]; do
+    {
+      (( COUNTER++ ))
+      FILERS="${FILERS}§"
+    }
+    done
+    echo "${FILERS}"
+} # end add_ssspaceSSS_to_name
+
+interrupt_rubocop() {
+    echo "${THISSCRIPTNAME} RUBOCOP INTERRUPT"
+}
+interrupt_integrations() {
+    echo "${THISSCRIPTNAME} INTEGRATIONS INTERRUPT"
+}
+interrupt_cucumbers() {
+    echo "${THISSCRIPTNAME} CUCUMBERS INTERRUPT"
+}
+rubocop_testing() {
+trap interrupt_rubocop INT
 BRANCH=$(git_current_branch)
 echo " "
 echo
@@ -147,23 +180,16 @@ else
   echo -e "~~+${SPACER}+~~${GRAY241}"
   FILERS=""
   ALL_FILERS=""
+
+
+
   while read -r ONE_FILE; do
   {
     if [ ! -z "${ONE_FILE}" ] ; then
     {
-      FILE_LEN="${#ONE_FILE}"
-      FILERS=" ${ONE_FILE}"
-      COUNTER=$FILE_LEN
-      (( COUNTER++ ))
-      (( COUNTER++ ))
-      until [ $COUNTER -ge $FILE_LONGEST ]; do
-      {
-        (( COUNTER++ ))
-        FILERS="${FILERS}§"
-      }
-      done
+      FILERS=$(add_ssspaceSSS_to_name "${ONE_FILE}" $FILE_LONGEST)
       ALL_FILERS="${ALL_FILERS}
-  ${FILERS}"
+${FILERS}"
       #echo -e "${PURPLE_BLUE}  + ${BRIGHT_BLUE87}${ONE_FILE} ${PURPLE_BLUE}  + "
     }
     fi
@@ -178,7 +204,29 @@ else
     fi
   }
   done <<< "${ALL_FILERS}"
-  echo "${FILES}" | sort -n | uniq | xargs bundle exec rubocop -a
+  echo -e "${PURPLE_BLUE}  +${SPACER}+ "
+  echo -e "~~+${SPACER}+~~${GRAY241}"
+  for ONE_FILE in ${FILES}; do
+  {
+    if [ ! -z "${ONE_FILE}" ] ; then
+    {
+      RUBORESULT=$(bundle exec rubocop -a "${ONE_FILE}")
+      if [ ! -z "${RUBORESULT}" ] && [[ "${RUBORESULT}" != *"no offenses detected"* ]]; then
+      {
+        FILERS=$(add_ssspaceSSS_to_name "${ONE_FILE}" $FILE_LONGEST)
+        echo -e "  ${RED}+${YELLOW220} ${FILERS} ${RED}+ FAILED" | sed 's@§@ @g'
+        while read -r  RUBORESULT_LINE; do
+        {
+          echo -e "  ${RED}+${YELLOW220}---${RESET} ${RUBORESULT_LINE}  "
+        }
+        done <<< "${RUBORESULT}"
+      }
+      fi
+    }
+    fi
+  }
+  done
+  #echo "${FILES}" | sort -n | uniq | xargs bundle exec rubocop -a
   if (( $? != 0 )) ;  then
   {
     echo -e "${PURPLE_BLUE}  + ${RED} Rubocop errors. Please fix  "
@@ -195,6 +243,13 @@ fi
 
 
 
+} # end rubocop_testing
+rubocop_testing
+
+
+
+
+
 find_location_rake_lib() {
   THIS_RUBY_VERSION=$(ruby --version  | cut -d' ' -f2 | cut -d'p' -f1)
 
@@ -203,6 +258,8 @@ find_location_rake_lib() {
   [ -z "${LOCATION_RAKE_LIB}" ] && LOCATION_RAKE_LIB=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "${THIS_RUBY_VERSION}")         # Other  Install Type environment macthing ruby and gem version
   [ -z "${LOCATION_RAKE_LIB}" ] && LOCATION_RAKE_LIB=$(locate test_loader.rb | grep "rake-*.*.*/lib" | head -1 )  # Ruby compiled installed with WGET, or GEM install folder is not matching to rake install, just get the first one
 }
+
+
 
 find_location_rake_lib
 if [ -z "${LOCATION_RAKE_LIB}" ] ; then
@@ -238,17 +295,24 @@ RAKE_LIB_FOLDER=$(echo ${RAKELOADER_LIB_FOLDER%/*})
 
 # ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb"  "test/lib/tasks/cleanup_sms_test.rb"
 
+
+
 if [ -z "${1}" ] ; then
 {
+
+integrations_testing() {
+trap interrupt_integrations INT
   echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
-  echo -e "${PURPLE_BLUE}  + ${YELLOW220} No specific test was listed "
+  echo -e "${PURPLE_BLUE}  + ${YELLOW220} No specific ${CYAN} Integration ${YELLOW220}or ${CYAN} Cucumber${YELLOW220} test was listed "
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
   echo -e "${PURPLE_BLUE}  + ${CYAN}SAMPLE:"
-  echo -e "${PURPLE_BLUE}  + ${CYAN}        ./check.sh test/lib/tasks/cleanup_email_test.rb"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}                      ./check.sh test/lib/tasks/cleanup_email_test.rb"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}     or   bundle exec ./check.sh test/lib/tasks/cleanup_email_test.rb"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}     or            be ./check.sh test/lib/tasks/cleanup_email_test.rb"
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
-  echo -e "${PURPLE_BLUE}  + ${YELLOW220} SO I WILL RUN ALL THE TESTS: All the ${RED} integrations, and all the ${RED}cucumbers  "
+  echo -e "${PURPLE_BLUE}  + ${YELLOW220} SO I WILL RUN ALL THE TESTS: All the ${CYAN} Integrations${YELLOW220}, and all the ${CYAN}Cucumbers  "
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
   echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
   echo "    LOCATION_RAKE_LIB : $LOCATION_RAKE_LIB"
@@ -387,6 +451,11 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
   echo -e "${PURPLE_BLUE}  + ${RESET}"
   echo -e "${PURPLE_BLUE}  + ${RESET}"
 
+} # end integrations_testing
+integrations_testing
+
+cucumbers_testing() {
+trap interrupt_cucumbers INT
 
 
   # PERFORM TESTS
@@ -454,9 +523,18 @@ ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
   eval "bundle exec cucumber ${CUCUMBER_TESTS_EXISTS}"
   echo -e "${PURPLE_BLUE}  + ${RESET}"
   echo -e "${PURPLE_BLUE}  + ${RESET}"
+
+} # end cucumbers_testing
+cucumbers_testing
+
+
 }
 else # -z ${1}
 {
+  
+integrations_testing() {
+trap interrupt_integrations INT
+
   echo -e "${PURPLE_BLUE}  + ${CYAN}:"
   echo -e "${PURPLE_BLUE}  + ${CYAN}:"
   echo -e "${PURPLE_BLUE}  + ${CYAN}:  TESTS were given       "
@@ -507,6 +585,12 @@ else # -z ${1}
   }
   fi
 
+} # end integrations_testing
+integrations_testing
+
+cucumbers_testing() {
+trap interrupt_cucumbers INT
+
   CUCUMBER_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "\.feature")
   if [[ ! -z "${CUCUMBER_TESTS_EXISTS}" ]] ; then
   {
@@ -521,7 +605,9 @@ else # -z ${1}
       echo -e "${PURPLE_BLUE}  + ${RESET}"
   }
   fi
+} # end cucumbers_testing
+cucumbers_testing
 
-}
+} # end if not -z 1 
 fi
 
