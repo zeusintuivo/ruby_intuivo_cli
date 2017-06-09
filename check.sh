@@ -57,7 +57,7 @@ if ! command -v git >/dev/null 2>&1; then
 }
 fi
 
- 
+
 if command -v git_current_branch >/dev/null 2>&1; then
 {
   echo " "
@@ -122,7 +122,7 @@ echo -e "  +-- ${CYAN} Locating files that changes in this branch "
 echo -e "${PURPLE_BLUE}  +${GRAY241}"
 
 FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
-FILES2=$(git status -sb | egrep -v "##" | cut -c4- | egrep -v "\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
+FILES2=$(git status -sb | egrep -v "##" | cut -c4- | egrep -v "\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
 FILES="${FILES1}
 ${FILES2}"
 
@@ -531,7 +531,7 @@ cucumbers_testing "${@}"
 }
 else # -z ${1}
 {
-  
+
 given_integrations_testing() {
 trap interrupt_integrations INT
 
@@ -583,9 +583,9 @@ trap interrupt_integrations INT
   {
     echo -e "${RED}  + ${YELLOW220}:  ${CYAN} No integration tests found !     "
     echo -e "${RED}  + ${YELLOW220}:  ${CYAN} I got this but I am looking for *_test.rb files      "
-    for ONETEST in ${@}; do 
+    for ONETEST in ${@}; do
     {
-      echo -e "${RED}  + ${YELLOW220}:  ${CYAN} ${ONETEST}"  
+      echo -e "${RED}  + ${YELLOW220}:  ${CYAN} ${ONETEST}"
     }
     done
     echo -e "${RED}  + ${YELLOW220}: ..."
@@ -615,9 +615,9 @@ trap interrupt_cucumbers INT
   {
     echo -e "${RED}  + ${YELLOW220}:  ${CYAN} No cucumber tests found !     "
     echo -e "${RED}  + ${YELLOW220}:  ${CYAN} I got this but I am looking for *.feature files      "
-    for ONETEST in ${@}; do 
+    for ONETEST in ${@}; do
     {
-      echo -e "${RED}  + ${YELLOW220}:  ${CYAN} ${ONETEST}"  
+      echo -e "${RED}  + ${YELLOW220}:  ${CYAN} ${ONETEST}"
     }
     done
     echo -e "${RED}  + ${YELLOW220}: ..."
@@ -626,6 +626,6 @@ trap interrupt_cucumbers INT
 } # end cucumbers_testing
 given_cucumbers_testing "${@}"
 
-} # end if not -z 1 
+} # end if not -z 1
 fi
 
