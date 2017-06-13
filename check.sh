@@ -249,19 +249,51 @@ rubocop_testing
 
 
 
-
-find_location_rake_lib() {
-  THIS_RUBY_VERSION=$(ruby --version  | cut -d' ' -f2 | cut -d'p' -f1)
-
-  # Then get folder based on ruby version 2.2.5 and rake version 10.5.0 used for development
-  LOCATION_RAKE_LIB=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "ruby-${THIS_RUBY_VERSION}")  # RVM Type environment
-  [ -z "${LOCATION_RAKE_LIB}" ] && LOCATION_RAKE_LIB=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "${THIS_RUBY_VERSION}")         # Other  Install Type environment macthing ruby and gem version
-  [ -z "${LOCATION_RAKE_LIB}" ] && LOCATION_RAKE_LIB=$(locate test_loader.rb | grep "rake-*.*.*/lib" | head -1 )  # Ruby compiled installed with WGET, or GEM install folder is not matching to rake install, just get the first one
+extract_version(){
+  sed -nre 's/^[^0-9]*(([0-9]+\.)*[0-9]+).*/\1/p'
 }
 
+find_location_rake_lib() {
+  local rake_version=$(rake --version 2>&1 | extract_version) # Check and catch capture all stout sdout output, error will return none 0 to $?)
+  # ALTERNATIVE: local rake_version2=$(gem list rake | grep "^rake (*.*.*)" | extract_version) # Check and catch capture all stout sdout output, error will return none 0 to $?)
+  local rake_location=$(which rake | sed 's/bin\/rake//g')
+  local ruby_version=$(ruby --version | extract_version)
+  sudo -u root -i --  sudo updatedb
+  # THIS_RUBY_VERSION=$(ruby --version  | cut -d' ' -f2 | cut -d'p' -f1)
 
+  # Then get folder based on ruby version 2.2.5 and rake version 10.5.0 used for development
+  local rake_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "ruby-${ruby_version}" | grep "rake-${rake_version}" | head -1 )  # RVM Type environment
+  [ -z "${rake_lib_folder}" ] && rake_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "${ruby_version}" | head -1 )         # Other  Install Type environment macthing ruby and gem version
+  [ -z "${rake_lib_folder}" ] && rake_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | head -1 )  # Ruby compiled installed with WGET, or GEM install folder is not matching to rake install, just get the first one
 
-find_location_rake_lib
+  #  if [ -d "${HOME}/.rvm/" ] ; then
+  #  {
+  #      local rake_folder=$(find "${HOME}"/.rvm/ -name "rake-${rake_version}")
+  #      local task_manager_location=$(find "${HOME}"/.rvm/ -name "task_manager.rb" | grep "rake-${rake_version}")
+  #  }
+  #  else
+  #  {
+  #      local rake_folder=$(locate rake | grep $rake_version | grep -ve test | grep rake.rb$ | sed 's/rake.rb//g' )
+  #      local task_manager_location=$(locate rake | grep $rake_version | grep task_manager.rb | grep -ve test)
+  #  }
+  #  fi
+  #  if [ -z "${rake_folder}" ] || [ -z "${task_manager_location}" ] || [ ! -d "${rake_folder}/" ]; then
+  #  {
+  #      local rake_folder=$(locate rake | grep $rake_version | grep -ve test | grep rake.rb$ | sed 's/rake.rb//g' )
+  #      local task_manager_location=$(locate rake | grep $rake_version | grep task_manager.rb | grep -ve test)
+  #  }
+  #  fi
+  # echo " "
+  # echo -e " ${GREEN} rake_location${RED}:${CYAN}${rake_location} "
+  # echo -e " ${GREEN} rake_folder${RED}:${CYAN}${rake_folder} "
+  # #echo -e " ${GREEN} ruby_version${RED}:${CYAN}${ruby_version} "
+  # echo -e " ${GREEN} rake_version${RED}:${CYAN}${rake_version} "
+  # echo -e " ${GREEN} task_manager_location${RED}:${CYAN}${task_manager_location} "
+  # echo -e " ${GREEN} rake_lib_folder${RED}:${CYAN}${rake_lib_folder} "
+  echo "${rake_lib_folder}"
+} # end find_location_rake_lib
+
+LOCATION_RAKE_LIB=$(find_location_rake_lib)
 if [ -z "${LOCATION_RAKE_LIB}" ] ; then
 {
   echo -e "${PURPLE_BLUE}  + ${YELLOW220}WARNING COULD NOT FIND  test_loader.rb "
@@ -271,7 +303,7 @@ if [ -z "${LOCATION_RAKE_LIB}" ] ; then
   wait
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
   echo -e "${PURPLE_BLUE}  + ${YELLOW220} Attempting to find test_loader.rb  again"
-  find_location_rake_lib
+  LOCATION_RAKE_LIB=$(find_location_rake_lib)
   wait
   if [ -z "${LOCATION_RAKE_LIB}" ] ; then
   {
@@ -292,6 +324,7 @@ RAKE_LIB_FOLDER=$(echo ${RAKELOADER_LIB_FOLDER%/*})
   echo "      RAKE_LIB_FOLDER : $RAKE_LIB_FOLDER"
 
 # ALL THE TESTS
+#ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\"                               \"${LOCATION_RAKE_LIB}\"  "                                              ${INTEGRATION_TESTS_EXISTS}
 #ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/lib/tasks/cleanup_email_test.rb" "test/lib/tasks/cleanup_sms_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
 
 # Email
