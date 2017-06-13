@@ -363,21 +363,54 @@ find_rake_lib_and_add_it_to_temp_keys() {
     }
     fi
 } # end find_rake_lib_and_add_it_to_temp_keys
+
+kill_execution() {
+  echo -e " ☠ ${LIGHTPINK} KILL EXECUTION SIGNAL SEND ${RESET}"
+  exit 69;
+} # end kill_execution
+
+failed() {
+    ARGS="${@}"
+    if [[ ! -z "${ARGS-x}" ]] ; then # if its set and not empty
+    {
+      echo -e "${RED} 𝞦 ${LIGHTYELLOW} ${ARGS} ${RED} has failed!  ${RESET}"
+      kill_execution
+    }
+    fi
+} # end failed
+
+test_executable() {
+    RAKE_EXECUTABLE_LIB_FOLDER=$(echo "${RAKE_EXECUTABLE}" | sed 's/ /\n/g' | grep -e "lib$")
+    [ ! -d  "${RAKE_EXECUTABLE_LIB_FOLDER}/"  ] && failed Lib folder for testing was not found .. ${GREEN} I am looking for something like \"rake-11.3.0/lib\"
+    RAKE_EXECUTABLE_LOADER_FILE=$(echo "${RAKE_EXECUTABLE}" | sed 's/ /\n/g' | grep -e "_loader.rb$" )
+    [ ! -f  "${RAKE_EXECUTABLE_LOADER_FILE}"  ] && failed Loader file for loading tests was not found .. ${GREEN} I am looking for something like \"rake-11.3.0/lib/rake/rake_test_loader.rb\"
+} # end test_executable
+
+files_execute() {
+    RAKE_EXECUTABLE_LIB_FOLDER=$(echo "${RAKE_EXECUTABLE}" | sed 's/ /\n/g' | grep -e "lib$")
+    RAKE_EXECUTABLE_LOADER_FILE=$(echo "${RAKE_EXECUTABLE}" | sed 's/ /\n/g' | grep -e "_loader.rb$" )
+    ( [ ! -d  "${RAKE_EXECUTABLE_LIB_FOLDER}/"  ] || [ ! -f  "${RAKE_EXECUTABLE_LOADER_FILE}"  ] )  && return 0
+    return 1
+} # end test_executable
+
 process_rake_executable() {
   if [ -z "${RAKE_EXECUTABLE}" ] ; then
   {
     find_rake_lib_and_add_it_to_temp_keys
-
+    test_executable
   }
   else
   {
-    INTEGRATION_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_test\.rb")
     echo "      RAKE_EXECUTABLE : $RAKE_EXECUTABLE"
+    if ! files_execute ; then
+    {
+      echo -e "${PURPLE_BLUE}  + ${YELLOW220} Executable of Folder Lib, loader.rb From .temp_key Not executing correctly. Attempting to seek again "
+      find_rake_lib_and_add_it_to_temp_keys
+      test_executable
+    }
+    fi
   }
   fi
-
-
-
 } # end process_rake_executable
 
 echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
