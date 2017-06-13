@@ -293,44 +293,72 @@ find_location_rake_lib() {
   echo "${rake_lib_folder}"
 } # end find_location_rake_lib
 
-LOCATION_RAKE_LIB=$(find_location_rake_lib)
-if [ -z "${LOCATION_RAKE_LIB}" ] ; then
-{
-  echo -e "${PURPLE_BLUE}  + ${YELLOW220}WARNING COULD NOT FIND  test_loader.rb "
-  echo -e "${PURPLE_BLUE}  + ${CYAN}"
-  echo -e "${PURPLE_BLUE}  + ${CYAN}Attempting to run ${YELLOW220} sudo updatedb "
-  sudo updatedb
-  wait
-  echo -e "${PURPLE_BLUE}  + ${CYAN}"
-  echo -e "${PURPLE_BLUE}  + ${YELLOW220} Attempting to find test_loader.rb  again"
-  LOCATION_RAKE_LIB=$(find_location_rake_lib)
-  wait
-  if [ -z "${LOCATION_RAKE_LIB}" ] ; then
-  {
-    echo -e "${PURPLE_BLUE}  + ${RED}DID NOT FIND test_loader.rb "
-    echo -e "${PURPLE_BLUE}  + ${CYAN}"
-    echo -e "${PURPLE_BLUE}  + ${CYAN} I Will keep running but this could cause it not to run. ${YELLOW220}Cross fingers"
-    echo -e "${PURPLE_BLUE}  + ${CYAN}"
-  }
-  fi
+load_temp_keys() {
+          export GOOGLE_API_KEY="x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1xx1x1"
+          export GOOGLE_CLIENT_ID="012345678900-gmk2gmk2gmk2gmk2gmk2gmk2gmk2gmk2.apps.googleusercontent.com"
+          export GOOGLE_CLIENT_SECRET="QuerbyQuerbyErgoIpsonHop"
+          export GOOGLE_EMAIL_DOMAIN="weise.box"
+
+          LOAD_TEMP_KEYS="# Empty script"
+          [ -f .temp_keys ] && LOAD_TEMP_KEYS=$(<.temp_keys)
+          eval "${LOAD_TEMP_KEYS}"
+
+          echo -e "${PURPLE_BLUE}  + TEMP KEYS NEED IT FOR: test/integration/inquiry_plugin_integration_test.rb"
+          echo -e "${PURPLE_BLUE}  + "
+          echo -e "${PURPLE_BLUE}  + GOOGLE_API_KEY      :${GRAY241}${GOOGLE_API_KEY}"
+          echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_ID    :${GRAY241}${GOOGLE_CLIENT_ID}"
+          echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_SECRET:${GRAY241}${GOOGLE_CLIENT_SECRET}"
+          echo -e "${PURPLE_BLUE}  + GOOGLE_EMAIL_DOMAIN :${GRAY241}${GOOGLE_EMAIL_DOMAIN}"
+          echo -e "${PURPLE_BLUE}  + "
 }
-fi
-RAKELOADER_LIB_FOLDER=$(echo ${LOCATION_RAKE_LIB%/*})
-RAKE_LIB_FOLDER=$(echo ${RAKELOADER_LIB_FOLDER%/*})
+load_temp_keys
 
-  echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
-  echo "    LOCATION_RAKE_LIB : $LOCATION_RAKE_LIB"
-  echo "RAKELOADER_LIB_FOLDER : $RAKELOADER_LIB_FOLDER"
-  echo "      RAKE_LIB_FOLDER : $RAKE_LIB_FOLDER"
+process_rake_executable() {
 
-# ALL THE TESTS
-#ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\"                               \"${LOCATION_RAKE_LIB}\"  "                                              ${INTEGRATION_TESTS_EXISTS}
-#ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/lib/tasks/cleanup_email_test.rb" "test/lib/tasks/cleanup_sms_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+} # end process_rake_executable
+rake_lib_folder() {
+              LOCATION_RAKE_LIB=$(find_location_rake_lib)
+              if [ -z "${LOCATION_RAKE_LIB}" ] ; then
+              {
+                echo -e "${PURPLE_BLUE}  + ${YELLOW220}WARNING COULD NOT FIND  test_loader.rb "
+                echo -e "${PURPLE_BLUE}  + ${CYAN}"
+                echo -e "${PURPLE_BLUE}  + ${CYAN}Attempting to run ${YELLOW220} sudo updatedb "
+                sudo updatedb
+                wait
+                echo -e "${PURPLE_BLUE}  + ${CYAN}"
+                echo -e "${PURPLE_BLUE}  + ${YELLOW220} Attempting to find test_loader.rb  again"
+                LOCATION_RAKE_LIB=$(find_location_rake_lib)
+                wait
+                if [ -z "${LOCATION_RAKE_LIB}" ] ; then
+                {
+                  echo -e "${PURPLE_BLUE}  + ${RED}DID NOT FIND test_loader.rb "
+                  echo -e "${PURPLE_BLUE}  + ${CYAN}"
+                  echo -e "${PURPLE_BLUE}  + ${CYAN} I Will keep running but this could cause it not to run. ${YELLOW220}Cross fingers"
+                  echo -e "${PURPLE_BLUE}  + ${CYAN}"
+                }
+                fi
+              }
+              fi
 
-# Email
-# ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb"  "test/lib/tasks/cleanup_email_test.rb"
+              RAKELOADER_LIB_FOLDER=$(echo ${LOCATION_RAKE_LIB%/*})
+              RAKE_LIB_FOLDER=$(echo ${RAKELOADER_LIB_FOLDER%/*})
+              RAKE_EXECUTABLE="\"${RAKE_LIB_FOLDER}\" \"${LOCATION_RAKE_LIB}\""
 
-# ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb"  "test/lib/tasks/cleanup_sms_test.rb"
+                echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
+                echo "    LOCATION_RAKE_LIB : $LOCATION_RAKE_LIB"
+                echo "RAKELOADER_LIB_FOLDER : $RAKELOADER_LIB_FOLDER"
+                echo "      RAKE_LIB_FOLDER : $RAKE_LIB_FOLDER"
+                echo "      RAKE_EXECUTABLE : $RAKE_EXECUTABLE"
+
+              # ALL THE TESTS
+              #ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\"                               \"${LOCATION_RAKE_LIB}\"  "                                              ${INTEGRATION_TESTS_EXISTS}
+              #ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/lib/tasks/cleanup_email_test.rb" "test/lib/tasks/cleanup_sms_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+
+              # Email
+              # ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb"  "test/lib/tasks/cleanup_email_test.rb"
+
+              # ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb"  "test/lib/tasks/cleanup_sms_test.rb"
+} # end rake_lib_folder
 
 
 
@@ -461,25 +489,9 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
   echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} INTEGRATION"
   echo -e "${PURPLE_BLUE}  + "
 
-  export GOOGLE_API_KEY="x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1xx1x1"
-  export GOOGLE_CLIENT_ID="012345678900-gmk2gmk2gmk2gmk2gmk2gmk2gmk2gmk2.apps.googleusercontent.com"
-  export GOOGLE_CLIENT_SECRET="QuerbyQuerbyErgoIpsonHop"
-  export GOOGLE_EMAIL_DOMAIN="weise.box"
-
-  LOAD_TEMP_KEYS="# Empty script"
-  [ -f .temp_keys ] && LOAD_TEMP_KEYS=$(<.temp_keys)
-  eval "${LOAD_TEMP_KEYS}"
-
-  echo -e "${PURPLE_BLUE}  + TEMP KEYS NEED IT FOR: test/integration/inquiry_plugin_integration_test.rb"
-  echo -e "${PURPLE_BLUE}  + "
-  echo -e "${PURPLE_BLUE}  + GOOGLE_API_KEY      :${GRAY241}${GOOGLE_API_KEY}"
-  echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_ID    :${GRAY241}${GOOGLE_CLIENT_ID}"
-  echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_SECRET:${GRAY241}${GOOGLE_CLIENT_SECRET}"
-  echo -e "${PURPLE_BLUE}  + GOOGLE_EMAIL_DOMAIN :${GRAY241}${GOOGLE_EMAIL_DOMAIN}"
-  echo -e "${PURPLE_BLUE}  + "
-  echo -e "${PURPLE_BLUE}  + ${CYAN}ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\" \"${LOCATION_RAKE_LIB}\" ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
   echo -e "${PURPLE_BLUE}  + ${RESET}"
-  eval "ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\" \"${LOCATION_RAKE_LIB}\" " ${INTEGRATION_TESTS_EXISTS}
+  eval "ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${INTEGRATION_TESTS_EXISTS}
   #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
   echo -e "${PURPLE_BLUE}  + ${RESET}"
   echo -e "${PURPLE_BLUE}  + ${RESET}"
@@ -592,25 +604,9 @@ trap interrupt_integrations INT
       echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} INTEGRATION"
       echo -e "${PURPLE_BLUE}  + "
 
-      export GOOGLE_API_KEY="x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1xx1x1"
-      export GOOGLE_CLIENT_ID="012345678900-gmk2gmk2gmk2gmk2gmk2gmk2gmk2gmk2.apps.googleusercontent.com"
-      export GOOGLE_CLIENT_SECRET="QuerbyQuerbyErgoIpsonHop"
-      export GOOGLE_EMAIL_DOMAIN="weise.box"
-
-      LOAD_TEMP_KEYS="# Empty script"
-      [ -f .temp_keys ] && LOAD_TEMP_KEYS=$(<.temp_keys)
-      eval "${LOAD_TEMP_KEYS}"
-
-      echo -e "${PURPLE_BLUE}  + TEMP KEYS NEED IT FOR: test/integration/inquiry_plugin_integration_test.rb"
-      echo -e "${PURPLE_BLUE}  + "
-      echo -e "${PURPLE_BLUE}  + GOOGLE_API_KEY      :${GRAY241}${GOOGLE_API_KEY}"
-      echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_ID    :${GRAY241}${GOOGLE_CLIENT_ID}"
-      echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_SECRET:${GRAY241}${GOOGLE_CLIENT_SECRET}"
-      echo -e "${PURPLE_BLUE}  + GOOGLE_EMAIL_DOMAIN :${GRAY241}${GOOGLE_EMAIL_DOMAIN}"
-      echo -e "${PURPLE_BLUE}  + "
-      echo -e "${PURPLE_BLUE}  + ${CYAN}ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\" \"${LOCATION_RAKE_LIB}\" ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RED}"
+      echo -e "${PURPLE_BLUE}  + ${CYAN}ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RED}"
       echo -e "${PURPLE_BLUE}  + ${RESET}"
-      eval "ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\" \"${LOCATION_RAKE_LIB}\" " ${INTEGRATION_TESTS_EXISTS}
+      eval "ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${INTEGRATION_TESTS_EXISTS}
       #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
       echo -e "${PURPLE_BLUE}  + ${RESET}"
       echo -e "${PURPLE_BLUE}  + ${RESET}"
