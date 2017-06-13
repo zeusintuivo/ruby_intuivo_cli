@@ -536,7 +536,7 @@ ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
   }
   done <<< "${ALL_CUCUMBER_TESTS}"
 
- if [[ ! -z "${CUCUMBER_TEST_FILES_NOT_FOUND}" ]] ; then
+  if [[ ! -z "${CUCUMBER_TEST_FILES_NOT_FOUND}" ]] ; then
   {
     echo -e "${PURPLE_BLUE}  + "
     echo -e "${PURPLE_BLUE}  + ${YELLOW220} WARNING  ${PURPLE_BLUE}THE FOLLOWING CUCUMBER TEST FILES WHERE NOT FOUND AND were ${YELLOW220}ignored  ${PURPLE_BLUE}from your list"
@@ -547,15 +547,18 @@ ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
   }
   fi
 
-  echo -e "${PURPLE_BLUE}  + "
-  echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} CUCUMBER"
-  echo -e "${PURPLE_BLUE}  + "
-  echo -e "${PURPLE_BLUE}  + "
-  echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec cucumber ${YELLOW220}${CUCUMBER_TESTS_EXISTS}${RED}"
-  echo -e "${PURPLE_BLUE}  + ${RESET}"
-  eval "bundle exec cucumber ${CUCUMBER_TESTS_EXISTS}"
-  echo -e "${PURPLE_BLUE}  + ${RESET}"
-  echo -e "${PURPLE_BLUE}  + ${RESET}"
+  if [[ ! -z "${CUCUMBER_TESTS_EXISTS}" ]] ; then
+  {
+    echo -e "${PURPLE_BLUE}  + "
+    echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} CUCUMBER"
+    echo -e "${PURPLE_BLUE}  + "
+    echo -e "${PURPLE_BLUE}  + "
+    echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec cucumber ${YELLOW220}${CUCUMBER_TESTS_EXISTS}${RED}"
+    echo -e "${PURPLE_BLUE}  + ${RESET}"
+    eval "bundle exec cucumber ${CUCUMBER_TESTS_EXISTS}"
+    echo -e "${PURPLE_BLUE}  + ${RESET}"
+    echo -e "${PURPLE_BLUE}  + ${RESET}"
+  }
 
 } # end cucumbers_testing
 cucumbers_testing "${@}"
