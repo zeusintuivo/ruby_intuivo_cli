@@ -359,7 +359,8 @@ find_rake_lib_and_add_it_to_temp_keys() {
     echo "      RAKE_EXECUTABLE : $RAKE_EXECUTABLE"
     if [ -f .temp_keys ] ; then
     {
-      echo "export RAKE_EXECUTABLE=\"$RAKE_EXECUTABLE"\" >> .temp_keys
+      local temp=$(escape_double_quotes <<< "${RAKE_EXECUTABLE}")
+      echo "export RAKE_EXECUTABLE=\"$temp"\"   >> .temp_keys
     }
     fi
 } # end find_rake_lib_and_add_it_to_temp_keys
@@ -379,42 +380,62 @@ failed() {
     fi
 } # end failed
 
-test_executable() {
-    RAKE_EXECUTABLE_LIB_FOLDER=$(echo "${RAKE_EXECUTABLE}" | sed 's/ /\n/g' | grep -e "lib$")
-    [ ! -d  "${RAKE_EXECUTABLE_LIB_FOLDER}/"  ] && failed Lib folder for testing was not found .. ${GREEN} I am looking for something like \"rake-11.3.0/lib\"
-    RAKE_EXECUTABLE_LOADER_FILE=$(echo "${RAKE_EXECUTABLE}" | sed 's/ /\n/g' | grep -e "_loader.rb$" )
-    [ ! -f  "${RAKE_EXECUTABLE_LOADER_FILE}"  ] && failed Loader file for loading tests was not found .. ${GREEN} I am looking for something like \"rake-11.3.0/lib/rake/rake_test_loader.rb\"
-} # end test_executable
+escape_backslashes() {
+    sed 's/\\/\\\\/g'
+} # end escape_backslashes
 
-files_execute() {
-    RAKE_EXECUTABLE_LIB_FOLDER=$(echo "${RAKE_EXECUTABLE}" | sed 's/ /\n/g' | grep -e "lib$")
-    RAKE_EXECUTABLE_LOADER_FILE=$(echo "${RAKE_EXECUTABLE}" | sed 's/ /\n/g' | grep -e "_loader.rb$" )
-    ( [ ! -d  "${RAKE_EXECUTABLE_LIB_FOLDER}/"  ] || [ ! -f  "${RAKE_EXECUTABLE_LOADER_FILE}"  ] )  && return 0
+escape_double_quotes() {
+    sed 's/\"/\\\"/g'
+} # end escape_double_quotes
+
+remove_double_quotes() {
+  sed 's/\"//g'
+} # end remove_double_quotes
+
+lib_folder_exists() {
+  local testing=$(echo "${RAKE_EXECUTABLE}" | remove_double_quotes | sed 's/ /\n/g' | grep -e "lib$")
+  [ ! -d  "${testing}/"  ] && return 1
+  return 0
+} # end lib_folder_exists
+
+loader_file_exists() {
+  local testing=$(echo "${RAKE_EXECUTABLE}" | remove_double_quotes | sed 's/ /\n/g' | grep -e "_loader.rb$" )
+  [ ! -f  "${testing}"  ] && return 1
+  return 0
+} # end loader_file_exists
+
+verify_rake_executable() {
+    ! lib_folder_exists && failed Lib folder for testing was not found .. ${GREEN} I am looking for something like \"rake-11.3.0/lib\"
+    ! loader_file_exists && failed Loader file for loading tests was not found .. ${GREEN} I am looking for something like \"rake-11.3.0/lib/rake/rake_test_loader.rb\"
+} # end verify_rake_executable
+
+lib_folder_and_loader_file_exist() {
+    ( ! lib_folder_exists || ! loader_file_exists )  && return 0
     return 1
-} # end test_executable
+} # end lib_folder_and_loader_file_exist
 
-process_rake_executable() {
+obtain_rake_executable() {
   if [ -z "${RAKE_EXECUTABLE}" ] ; then
   {
     find_rake_lib_and_add_it_to_temp_keys
-    test_executable
+    verify_rake_executable
   }
   else
   {
     echo "      RAKE_EXECUTABLE : $RAKE_EXECUTABLE"
-    if ! files_execute ; then
+    if ! lib_folder_and_loader_file_exist ; then
     {
       echo -e "${PURPLE_BLUE}  + ${YELLOW220} Executable of Folder Lib, loader.rb From .temp_key Not executing correctly. Attempting to seek again "
       find_rake_lib_and_add_it_to_temp_keys
-      test_executable
+      verify_rake_executable
     }
     fi
   }
   fi
-} # end process_rake_executable
+} # end obtain_rake_executable
 
 echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
-process_rake_executable
+obtain_rake_executable
 
 if [ -z "${1}" ] ; then
 {
