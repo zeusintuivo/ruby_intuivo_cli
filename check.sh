@@ -410,7 +410,7 @@ verify_rake_executable() {
 } # end verify_rake_executable
 
 lib_folder_and_loader_file_exist() {
-    ( ! lib_folder_exists || ! loader_file_exists )  && return 0
+    ( lib_folder_exists && loader_file_exists )  && return 0
     return 1
 } # end lib_folder_and_loader_file_exist
 
