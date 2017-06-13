@@ -559,7 +559,7 @@ ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
     echo -e "${PURPLE_BLUE}  + ${RESET}"
     echo -e "${PURPLE_BLUE}  + ${RESET}"
   }
-
+  fi
 } # end cucumbers_testing
 cucumbers_testing "${@}"
 
