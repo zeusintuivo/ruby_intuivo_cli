@@ -313,9 +313,6 @@ load_temp_keys() {
 }
 load_temp_keys
 
-process_rake_executable() {
-
-} # end process_rake_executable
 rake_lib_folder() {
               LOCATION_RAKE_LIB=$(find_location_rake_lib)
               if [ -z "${LOCATION_RAKE_LIB}" ] ; then
@@ -344,12 +341,6 @@ rake_lib_folder() {
               RAKE_LIB_FOLDER=$(echo ${RAKELOADER_LIB_FOLDER%/*})
               RAKE_EXECUTABLE="\"${RAKE_LIB_FOLDER}\" \"${LOCATION_RAKE_LIB}\""
 
-                echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
-                echo "    LOCATION_RAKE_LIB : $LOCATION_RAKE_LIB"
-                echo "RAKELOADER_LIB_FOLDER : $RAKELOADER_LIB_FOLDER"
-                echo "      RAKE_LIB_FOLDER : $RAKE_LIB_FOLDER"
-                echo "      RAKE_EXECUTABLE : $RAKE_EXECUTABLE"
-
               # ALL THE TESTS
               #ruby -I\"lib:test\" -I\"${RAKE_LIB_FOLDER}\"                               \"${LOCATION_RAKE_LIB}\"  "                                              ${INTEGRATION_TESTS_EXISTS}
               #ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/lib/tasks/cleanup_email_test.rb" "test/lib/tasks/cleanup_sms_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
@@ -360,7 +351,37 @@ rake_lib_folder() {
               # ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb"  "test/lib/tasks/cleanup_sms_test.rb"
 } # end rake_lib_folder
 
+find_rake_lib_and_add_it_to_temp_keys() {
+    rake_lib_folder
+    echo "    LOCATION_RAKE_LIB : $LOCATION_RAKE_LIB"
+    echo "RAKELOADER_LIB_FOLDER : $RAKELOADER_LIB_FOLDER"
+    echo "      RAKE_LIB_FOLDER : $RAKE_LIB_FOLDER"
+    echo "      RAKE_EXECUTABLE : $RAKE_EXECUTABLE"
+    if [ -f .temp_keys ] ; then
+    {
+      echo "export RAKE_EXECUTABLE=\"$RAKE_EXECUTABLE"\" >> .temp_keys
+    }
+    fi
+} # end find_rake_lib_and_add_it_to_temp_keys
+process_rake_executable() {
+  if [ -z "${RAKE_EXECUTABLE}" ] ; then
+  {
+    find_rake_lib_and_add_it_to_temp_keys
 
+  }
+  else
+  {
+    INTEGRATION_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_test\.rb")
+    echo "      RAKE_EXECUTABLE : $RAKE_EXECUTABLE"
+  }
+  fi
+
+
+
+} # end process_rake_executable
+
+echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
+process_rake_executable
 
 if [ -z "${1}" ] ; then
 {
