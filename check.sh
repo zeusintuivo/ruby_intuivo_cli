@@ -451,12 +451,16 @@ trap interrupt_integrations INT
   echo -e "${PURPLE_BLUE}  + ${CYAN}                      ./check.sh test/lib/tasks/cleanup_email_test.rb"
   echo -e "${PURPLE_BLUE}  + ${CYAN}     or   bundle exec ./check.sh test/lib/tasks/cleanup_email_test.rb"
   echo -e "${PURPLE_BLUE}  + ${CYAN}     or            be ./check.sh test/lib/tasks/cleanup_email_test.rb"
+  echo -e "${PURPLE_BLUE}  + ${CYAN}     or   bundle exec ./check.sh test/services/boblink_invoice_ledger_details_exporter_spec.rb"
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
   echo -e "${PURPLE_BLUE}  + ${YELLOW220} SO I WILL RUN ALL THE TESTS: All the ${CYAN} Integrations${YELLOW220}, and all the ${CYAN}Cucumbers  "
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
 
   # PERFORM TESTS
-  ALL_INTEGRATION_TESTS=$(find * -type f -name "*_test.rb")
+  ALL_TESTSRB=$(find * -type f -name "*_test.rb")
+  ALL_SPECSRB=$(find * -type f -name "*_spec.rb")
+  ALL_INTEGRATION_TESTS="${ALL_TESTSRB}
+${ALL_SPECSRB}"
 #  ALL_INTEGRATION_TESTS="test/models/insurance_test.rb
 #test/workers/twilio_cleaner_worker_test.rb
 #test/controllers/account/doctors_controller_test.rb
