@@ -457,8 +457,8 @@ trap interrupt_integrations INT
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
 
   # PERFORM TESTS
-  ALL_TESTSRB=$(find * -type f -name "*_test.rb")
-  ALL_SPECSRB=$(find * -type f -name "*_spec.rb")
+  local ALL_TESTSRB=$(find * -type f -name "*_test.rb")
+  local ALL_SPECSRB=$(find * -type f -name "*_spec.rb")
   ALL_INTEGRATION_TESTS="${ALL_TESTSRB}
 ${ALL_SPECSRB}"
 #  ALL_INTEGRATION_TESTS="test/models/insurance_test.rb
@@ -675,7 +675,10 @@ trap interrupt_integrations INT
 
   # PERFORM TESTS
   #ruby -I"lib:test" -I"${RAKE_LIB_FOLDER}" "${LOCATION_RAKE_LIB}" "${1}"
-  INTEGRATION_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_test\.rb")
+  local ALL_TESTSRB=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_test\.rb")
+  local ALL_SPECSRB=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_spec\.rb")
+  INTEGRATION_TESTS_EXISTS="${ALL_TESTSRB}
+${ALL_SPECSRB}"
   if [[ ! -z "${INTEGRATION_TESTS_EXISTS}" ]] ; then
   {
       ##### REAPEAT START
