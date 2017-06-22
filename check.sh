@@ -361,6 +361,7 @@ find_rake_lib_and_add_it_to_temp_keys() {
     {
       local temp=$(escape_double_quotes <<< "${RAKE_EXECUTABLE}")
       echo -e "\n"  >> .temp_keys
+      sed -i '/export RAKE_EXECUTABLE=/d' .temp_keys
       echo "export RAKE_EXECUTABLE=\"$temp"\"   >> .temp_keys
     }
     fi
