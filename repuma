@@ -6,6 +6,6 @@
 sudo service nginx stop
 sudo /etc/init.d/pumacontrol.sh stop
 sudo /etc/init.d/pumacontrol.sh stop
-sudo /etc/init.d/pumacontrol.sh start
+sudo /etc/init.d/pumacontrol.sh start &
 sudo /etc/init.d/pumacontrol.sh status
-sudo service nginx stop
+sudo service nginx restart
