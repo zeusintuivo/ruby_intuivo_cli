@@ -730,13 +730,13 @@ trap interrupt_cucumbers INT
   else
   {
     echo -e "${RED}  + ${YELLOW220}:  ${CYAN} No cucumber tests found !     "
-    echo -e "${RED}  + ${YELLOW220}:  ${CYAN} I got this but I am looking for *.feature files      "
-    for ONETEST in ${@}; do
-    {
-      echo -e "${RED}  + ${YELLOW220}:  ${CYAN} ${ONETEST}"
-    }
-    done
-    echo -e "${RED}  + ${YELLOW220}: ..."
+    # echo -e "${RED}  + ${YELLOW220}:  ${CYAN} I got this but I am looking for *.feature files      "
+    # for ONETEST in ${@}; do
+    # {
+    #   echo -e "${RED}  + ${YELLOW220}:  ${CYAN} ${ONETEST}"
+    # }
+    # done
+    # echo -e "${RED}  + ${YELLOW220}: ..."
   }
   fi
 } # end cucumbers_testing
