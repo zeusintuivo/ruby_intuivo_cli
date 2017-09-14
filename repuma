@@ -3,9 +3,49 @@
 # @author Zeus Intuivo <zeus@intuivo.com>
 #
 #
+CYAN="\033[01;36m"
+YELLOW="\033[01;33m"
+PURPLE="\033[01;35m"
+RED="\033[01;31m"
+GREEN="\033[01;32m"
+echo -e "${RED}"
 sudo service nginx stop
+echo -e "${RED}"
 sudo /etc/init.d/pumacontrol.sh stop
-sudo /etc/init.d/pumacontrol.sh stop
-sudo /etc/init.d/pumacontrol.sh start &
-sudo /etc/init.d/pumacontrol.sh status
-sudo service nginx restart
+(
+    echo -e "${PURPLE}"
+    sudo /etc/init.d/pumacontrol.sh start &
+)
+wait
+(
+    WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status)
+    COUNTER=0
+    while [[ "${WAITINGFOR}" != *"puma is running"* ]] && [ $COUNTER -lt 10 ] ; do
+    {
+        new_color=$(( $COUNTER + 66 ))
+        echo -e "${YELLOW}...........\\033[38;5;${new_color}m waiting for puma to start"
+        pingres=$(ping localhost -c3)
+        WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status)
+        (( COUNTER++ ))
+    }
+    done
+    echo -e "${WAITINGFOR}"
+    if [[ "${WAITINGFOR}" == *"puma is not running"* ]] ; then
+    {
+        echo -e "${RED} ERROR! Failed to start puma "
+    }
+    else
+    {
+        echo -e "${GREEN}"
+        sudo service nginx start
+    }
+    fi
+)
+(
+    if [[ "${WAITINGFOR}" == *"puma is running"* ]] ; then
+    {
+        echo -e "${CYAN}"
+        sudo service nginx restart
+    }
+    fi
+)
