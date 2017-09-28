@@ -18,17 +18,30 @@ sudo /etc/init.d/pumacontrol.sh stop
 )
 wait
 (
-    WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status)
-    COUNTER=0
-    while [[ "${WAITINGFOR}" != *"puma is running"* ]] && [ $COUNTER -lt 10 ] ; do
+    # Note doing this '-e' forces the file system,  to search the file and always find it
+    # thought it seems like useless statement, it helps the file system catch up
+    # with the processing. This could be a bug out of our control.
+    echo "Waiting.."
+    if [ ! -e '/_/weise/config/server/puma.rb' ] ; then
     {
-        new_color=$(( $COUNTER + 66 ))
-        echo -e "${YELLOW}...........\\033[38;5;${new_color}m waiting for puma to start"
-        pingres=$(ping localhost -c3)
-        WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status)
-        (( COUNTER++ ))
+        echo -e "${RED} ONCE MORE!!"
+        sudo /etc/init.d/pumacontrol.sh start &
     }
-    done
+    fi
+
+        WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status)
+        COUNTER=0
+        while [[ "${WAITINGFOR}" != *"puma is running"* ]] && [ $COUNTER -lt 10 ] ; do
+        {
+            new_color=$(( $COUNTER + 66 ))
+            echo -e "${YELLOW}...........\\033[38;5;${new_color}m waiting for puma to start"
+            pingres=$(ping localhost -c3)
+            WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status)
+            (( COUNTER++ ))
+        }
+        done
+
+
     echo -e "${WAITINGFOR}"
     if [[ "${WAITINGFOR}" == *"puma is not running"* ]] ; then
     {
