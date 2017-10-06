@@ -22,7 +22,7 @@ wait
     # thought it seems like useless statement, it helps the file system catch up
     # with the processing. This could be a bug out of our control.
     echo "Waiting.."
-    if [ ! -e '/_/weise/config/server/puma.rb' ] ; then
+    if [ ! -e '/_/weise/config/server/puma.rb' ] || [ ! -e '/_/weise/shared/sockets/puma.sock' ] ; then
     {
         echo -e "${RED} ONCE MORE!!"
         sudo /etc/init.d/pumacontrol.sh start &
@@ -37,6 +37,14 @@ wait
             echo -e "${YELLOW}...........\\033[38;5;${new_color}m waiting for puma to start"
             pingres=$(ping localhost -c3)
             WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status)
+            # if [ ! -e '/_/weise/config/server/puma.rb' ] || [ ! -e '/_/weise/shared/sockets/puma.sock' ] ; then
+            # {
+            #     (
+            #         echo -e "${RED} ONCE ONCE ONCE MORE!!"
+            #         sudo /etc/init.d/pumacontrol.sh start &
+            #     )
+            # }
+            # fi
             (( COUNTER++ ))
         }
         done
