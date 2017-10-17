@@ -459,8 +459,8 @@ trap interrupt_integrations INT
   echo -e "${PURPLE_BLUE}  + ${CYAN}"
 
   # PERFORM TESTS
-  local ALL_TESTSRB=$(find * -type f -name "*_test.rb")
-  local ALL_SPECSRB=$(find * -type f -name "*_spec.rb")
+  local ALL_TESTSRB=$(find * -type f -name "*_test.rb" | sort | uniq)
+  local ALL_SPECSRB=$(find * -type f -name "*_spec.rb" | sort | uniq)
   ALL_INTEGRATION_TESTS="${ALL_TESTSRB}
 ${ALL_SPECSRB}"
 #  ALL_INTEGRATION_TESTS="test/models/insurance_test.rb
@@ -585,7 +585,7 @@ trap interrupt_cucumbers INT
 
 
   # PERFORM TESTS
-  ALL_CUCUMBER_TESTS=$(find * -type f -name "*.feature")
+  ALL_CUCUMBER_TESTS=$(find * -type f -name "*.feature" | sort | uniq)
 #  ALL_CUCUMBER_TESTS="features/sms_resilience.feature
 #features/admin/support_inquiry_interface.feature
 #features/inquiry_dispatch.feature
@@ -677,8 +677,8 @@ trap interrupt_integrations INT
 
   # PERFORM TESTS
   #ruby -I"lib:test" -I"${RAKE_LIB_FOLDER}" "${LOCATION_RAKE_LIB}" "${1}"
-  local ALL_TESTSRB=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_test\.rb")
-  local ALL_SPECSRB=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_spec\.rb")
+  local ALL_TESTSRB=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_test\.rb"| sort | uniq)
+  local ALL_SPECSRB=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_spec\.rb"| sort | uniq)
   INTEGRATION_TESTS_EXISTS="${ALL_TESTSRB}
 ${ALL_SPECSRB}"
   if [[ ! -z "${INTEGRATION_TESTS_EXISTS}" ]] ; then
@@ -714,13 +714,13 @@ given_integrations_testing "${@}"
 given_cucumbers_testing() {
 trap interrupt_cucumbers INT
 
-  CUCUMBER_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "\.feature")
+  CUCUMBER_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "\.feature" | sort | uniq)
   if [[ ! -z "${CUCUMBER_TESTS_EXISTS}" ]] ; then
   {
       echo -e "${PURPLE_BLUE}  + "
       echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} CUCUMBER"
       echo -e "${PURPLE_BLUE}  + "
-      echo -e "${PURPLE_BLUE}  + "sed 's/ /\n/g' | grep -e "\.feature"
+      echo -e "${PURPLE_BLUE}  + " #sed 's/ /\n/g' | grep -e "\.feature"
       echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec cucumber ${YELLOW220}${CUCUMBER_TESTS_EXISTS}${RED}"
       echo -e "${PURPLE_BLUE}  + ${RED}"
       eval "bundle exec cucumber ${CUCUMBER_TESTS_EXISTS}"
