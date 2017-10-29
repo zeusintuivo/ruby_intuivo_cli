@@ -22,29 +22,47 @@ wait
     # thought it seems like useless statement, it helps the file system catch up
     # with the processing. This could be a bug out of our control.
     echo "Waiting.."
-    if [ ! -e '/_/weise/config/server/puma.rb' ] || [ ! -e '/_/weise/shared/sockets/puma.sock' ] ; then
-    {
-        echo -e "${RED} ONCE MORE!!"
-        sudo /etc/init.d/pumacontrol.sh start &
-    }
-    fi
 
-        WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status)
+
+        WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status  2>&1 ) #  capture all stout sdout output
         COUNTER=0
         while [[ "${WAITINGFOR}" != *"puma is running"* ]] && [ $COUNTER -lt 10 ] ; do
         {
+
+            if [[ "${WAITINGFOR}" == *"Could not find "* ]] && [[ "${WAITINGFOR}" == *" in any of the sources"* ]] && [[ "${WAITINGFOR}" == *"Run "* ]] && [[ "${WAITINGFOR}" == *" to install missing gems"* ]] ; then
+            {
+                echo "Bundle installing..."
+                bundle_install=$(bundle install  2>&1 ) #  capture all stout sdout output
+                wait
+                if [[ "${bundle_install}" == *"Make sure that "* ]] && [[ "${bundle_install}" == *" succeeds before bundling."* ]] ; then
+                {
+                    echo "Gem installing..."
+                    gem_install=$(echo "${bundle_install}"| sed -n "/Make\ sure\ that/,/succeeds/p" | head -1 | sed 's/Make\ sure\ that\ .//g' | sed 's/succeeds\ before\ bundling.//g')
+                    echo "Gem install --- $gem_install"
+                    $gem_install
+                    wait
+                }
+                fi
+                COUNTER=0
+            }
+            fi
             new_color=$(( $COUNTER + 66 ))
             echo -e "${YELLOW}...........\\033[38;5;${new_color}m waiting for puma to start"
             pingres=$(ping localhost -c3)
-            WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status)
-            # if [ ! -e '/_/weise/config/server/puma.rb' ] || [ ! -e '/_/weise/shared/sockets/puma.sock' ] ; then
-            # {
-            #     (
-            #         echo -e "${RED} ONCE ONCE ONCE MORE!!"
-            #         sudo /etc/init.d/pumacontrol.sh start &
-            #     )
-            # }
-            # fi
+            WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status  2>&1 ) #  capture all stout sdout output
+            if  [ $COUNTER -gt 2 ] && [ ! -e '/_/weise/config/server/puma.rb' ] ; then
+            {
+                echo -e "${RED} WAITING FOR file SYSTEM TO CATCH UP .. ONCE MORE!!"
+                sudo /etc/init.d/pumacontrol.sh start &
+            }
+            fi
+            if  [ $COUNTER -gt 9 ] && [ ! -e '/_/weise/shared/sockets/puma.sock' ] ; then
+            {
+                echo -e "${RED} NOT STARTED YET MORE!!"
+                sudo /etc/init.d/pumacontrol.sh start &
+                COUNTER=0
+            }
+            fi
             (( COUNTER++ ))
         }
         done
