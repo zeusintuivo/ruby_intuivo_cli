@@ -13,8 +13,9 @@ sudo service nginx stop
 echo -e "${RED}"
 sudo /etc/init.d/pumacontrol.sh stop
 (
-    echo -e "${PURPLE}"
-    sudo /etc/init.d/pumacontrol.sh start &
+    echo -e "${PURPLE} Action requesting: start"
+    started=$(sudo /etc/init.d/pumacontrol.sh start  2>&1 )&
+    echo -e "${GREEN} $started"
 )
 wait
 (
@@ -26,10 +27,11 @@ wait
 
         WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status  2>&1 ) #  capture all stout sdout output
         COUNTER=0
+        echo -e "$WAITINGFOR"
         while [[ "${WAITINGFOR}" != *"puma is running"* ]] && [ $COUNTER -lt 10 ] ; do
         {
 
-            if [[ "${WAITINGFOR}" == *"Could not find "* ]] && [[ "${WAITINGFOR}" == *" in any of the sources"* ]] && [[ "${WAITINGFOR}" == *"Run "* ]] && [[ "${WAITINGFOR}" == *" to install missing gems"* ]] ; then
+            if [[ "${started}" == *"Could not find "* ]] && [[ "${started}" == *" in any of the sources"* ]] && [[ "${started}" == *"Run "* ]] && [[ "${started}" == *" to install missing gems"* ]] ; then
             {
                 echo "Bundle installing..."
                 bundle_install=$(bundle install  2>&1 ) #  capture all stout sdout output
@@ -47,19 +49,21 @@ wait
             }
             fi
             new_color=$(( $COUNTER + 66 ))
-            echo -e "${YELLOW}...........\\033[38;5;${new_color}m waiting for puma to start"
+            echo -e "${YELLOW}...................\\033[38;5;${new_color}m waiting for puma to start ${COUNTER}"
+            # Provides a delay to allow or puma to start. A Pausa of 3 seconds when -c3
             pingres=$(ping localhost -c3)
             WAITINGFOR=$(sudo /etc/init.d/pumacontrol.sh status  2>&1 ) #  capture all stout sdout output
+            echo -e "\\033[01;36m $WAITINGFOR" | tail -1
             if  [ $COUNTER -gt 2 ] && [ ! -e '/_/weise/config/server/puma.rb' ] ; then
             {
                 echo -e "${RED} WAITING FOR file SYSTEM TO CATCH UP .. ONCE MORE!!"
-                sudo /etc/init.d/pumacontrol.sh start &
+                started=$(sudo /etc/init.d/pumacontrol.sh start  2>&1 )&
             }
             fi
             if  [ $COUNTER -gt 9 ] && [ ! -e '/_/weise/shared/sockets/puma.sock' ] ; then
             {
                 echo -e "${RED} NOT STARTED YET MORE!!"
-                sudo /etc/init.d/pumacontrol.sh start &
+                started=$(sudo /etc/init.d/pumacontrol.sh start  2>&1 )
                 COUNTER=0
             }
             fi
@@ -76,7 +80,9 @@ wait
     else
     {
         echo -e "${GREEN}"
-        sudo service nginx start
+        restart=$(sudo service nginx start)&
+        echo -e "$restart"
+
     }
     fi
 )
@@ -84,7 +90,8 @@ wait
     if [[ "${WAITINGFOR}" == *"puma is running"* ]] ; then
     {
         echo -e "${CYAN}"
-        sudo service nginx restart
+        restart=$(sudo service nginx start)&
+        echo -e "$restart"
     }
     fi
 )
