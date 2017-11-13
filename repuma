@@ -12,6 +12,7 @@ echo -e "${RED}"
 sudo service nginx stop
 echo -e "${RED}"
 sudo /etc/init.d/pumacontrol.sh stop
+bundle install
 (
     echo -e "${PURPLE} Action requesting: start"
     started=$(sudo /etc/init.d/pumacontrol.sh start  2>&1 )&
