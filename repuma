@@ -81,8 +81,7 @@ wait
     else
     {
         echo -e "${GREEN}"
-        restart=$(sudo service nginx start)&
-        echo -e "$restart"
+        sudo service nginx restart
 
     }
     fi
@@ -91,8 +90,7 @@ wait
     if [[ "${WAITINGFOR}" == *"puma is running"* ]] ; then
     {
         echo -e "${CYAN}"
-        restart=$(sudo service nginx start)&
-        echo -e "$restart"
+        sudo service nginx restart
     }
     fi
 )
