@@ -553,20 +553,23 @@ remove_list_repos(){
 # @author Zeus Intuivo <zeus@intuivo.com>
 #
 load_project_list_prepare_wget(){
-    local provider="/_/clis/execute_command_intuivo_cli/project_list_prepare"
+    local provider="/_/clis/ruby_intuivo_cli/project_list_prepare"
     [   -e "${provider}"  ] && source "${provider}"
-    [ ! -e "${provider}"  ] && eval """$(wget --quiet --no-check-certificate  https://raw.githubusercontent.com/zeusintuivo/execute_command_intuivo_cli/master/project_list_prepare -O -  2>/dev/null )"""   # suppress only wget download messages, but keep wget output for variable
+    [ ! -e "${provider}"  ] && eval """$(wget --quiet --no-check-certificate  https://raw.githubusercontent.com/zeusintuivo/ruby_intuivo_cli/master/project_list_prepare -O -  2>/dev/null )"""   # suppress only wget download messages, but keep wget output for variable
     ( ( ! command -v type passed >/dev/null 2>&1;) && echo -e "\n \n  ERROR! Loading project_list_prepare \n \n " && exit 69; )
 }
 # end load_project_list_prepare_wget
 load_project_list_prepare_wget
 
 REPOS="
+
 1:repository
 repo_name_1_inside_1
 repon_name_2_inside_1
+
 2:repository_2
 repo_name_inside_2
 repon_name_2_inside_2
+
 "
 process_list_repos "${REPOS}"
