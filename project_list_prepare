@@ -442,8 +442,8 @@ bundle_install(){
 	    	{
 	    		passed "bundle install" 
 	    		results_passed "bundle install" 
-	    		bundle exec rails db:migrate RAILS_ENV=development
-	    		bin/rails db:migrate RAILS_ENV=development
+	    		[ -f bin/rails ] && bundle exec rails db:migrate RAILS_ENV=development
+	    		[ -f bin/rails ] && bin/rails db:migrate RAILS_ENV=development
 	    	} 
 	    	fi
     	}
@@ -451,8 +451,8 @@ bundle_install(){
     	{
     		passed "bundle install" 
     		results_passed "bundle install" 
-    		bundle exec rails db:migrate RAILS_ENV=development
-    		bin/rails db:migrate RAILS_ENV=development
+    		[ -f bin/rails ] && bundle exec rails db:migrate RAILS_ENV=development
+    		[ -f bin/rails ] && bin/rails db:migrate RAILS_ENV=development
     	} 
     	fi
 
@@ -481,7 +481,7 @@ process_list_repos(){
 		# hola
 		# ➜  projects [ -z "x" ] && echo "hola"
 		# ➜  projects
-
+		say "$LINE"
 	    [ -z "${LINE}" ] && continue  # if not empty
 	    # if [ ! -z "${LINE}" ] ; then # if not empty
 	    # {
