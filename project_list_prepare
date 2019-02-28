@@ -27,7 +27,7 @@ load_execute_commands_wget(){
                 [   -d "${cached_directory}" ] && ( command -v type passed >/dev/null 2>&1;) && passed "${cached_directory}${ONE_SCRIPT} Loaded"
                 [ ! -d "${cached_directory}" ] && eval """$(wget --quiet --no-check-certificate $URL  -O -  2>/dev/null )"""   # suppress only wget download messages, but keep wget output for variable
                 [ ! -d "${cached_directory}" ] && ( command -v type passed >/dev/null 2>&1;) && passed "$URL Loaded"
-                
+
             }
             fi
         }
@@ -63,7 +63,7 @@ load_extract_something_trimmed_between(){
                 [   -d "${cached_directory}" ] && ( command -v type extract_something_trimmed_between >/dev/null 2>&1;) && passed "${cached_directory}${ONE_SCRIPT} Loaded"
                 [ ! -d "${cached_directory}" ] && eval """$(wget --quiet --no-check-certificate $URL  -O -  2>/dev/null )"""   # suppress only wget download messages, but keep wget output for variable
                 [ ! -d "${cached_directory}" ] && ( command -v type extract_something_trimmed_between >/dev/null 2>&1;) && passed "$URL Loaded"
-                
+
             }
             fi
         }
@@ -84,7 +84,7 @@ load_extract_something_trimmed_between
 
 yarn_install(){
 	local NODE_VER YARN_PASSED YARN_INSTALL_GLOBAL YARN_INSTALL_GLOBALS
-	if [ -e yarn.lock ] ; then 
+	if [ -e yarn.lock ] ; then
 	{
 
 		# nvm fix
@@ -92,22 +92,22 @@ yarn_install(){
 		[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 		[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-		if [ -e .nvmrc ] ; then 
+		if [ -e .nvmrc ] ; then
 		{
 			NODE_VER=$(<.nvmrc)
-		} 
+		}
 		else
 		{
-			if [ -e yarn.lock ] ; then 
+			if [ -e yarn.lock ] ; then
 			{
 				NODE_VER=$(cat yarn.lock | grep @types/node/-/node- | cut -d- -f3 | cut -d'#' -f1  | sed s/.tgz//)
 			}
 			fi
 
-			if [ -z ${NODE_VER} ] && [ -e package.json ] ; then 
+			if [ -z ${NODE_VER} ] && [ -e package.json ] ; then
 			{
-				NODE_VER=$(cat package.json | grep '"node"' | cut -d'"' -f4) 
-				if [ -z ${NODE_VER} ] && [ -e package.json ] ; then 
+				NODE_VER=$(cat package.json | grep '"node"' | cut -d'"' -f4)
+				if [ -z ${NODE_VER} ] && [ -e package.json ] ; then
 				{
 					NODE_VER=($(cat package.json | grep "'node'" | cut -d"'" -f4) )
 				}
@@ -118,24 +118,24 @@ yarn_install(){
 		}
 		fi
 
-		if [ -z ${NODE_VER} ] && [ -e package.json ] ; then 
+		if [ -z ${NODE_VER} ] && [ -e package.json ] ; then
 		{
 			NODE_VER="stable"
 		}
 		fi
 
-		if  [ ! -z ${NODE_VER} ] && (! version_installed_is  "node --version"  "${NODE_VER}") ; then 
+		if  [ ! -z ${NODE_VER} ] && (! version_installed_is  "node --version"  "${NODE_VER}") ; then
 		{
-    		passed "Correct Node Version: ${NODE_VER}"	
-		} 
-	    else 
+    		passed "Correct Node Version: ${NODE_VER}"
+		}
+	    else
 	    {
-	    	warning "incorrect node Version: ${NODE_VER}"	
-	    	if  (version_installed_is  "nvm ls"  "node-${NODE_VER}") ; then 
+	    	warning "incorrect node Version: ${NODE_VER}"
+	    	if  (version_installed_is  "nvm ls"  "node-${NODE_VER}") ; then
 	    	{
-				nvm use "${NODE_VER}"	
-			} 
-		    else 
+				nvm use "${NODE_VER}"
+			}
+		    else
 		    {
 	    		nvm install "${NODE_VER}"
 	    		wait
@@ -147,25 +147,25 @@ yarn_install(){
 		verify_installed_version "node --version"  "${NODE_VER}"
 		echo "yarn"
 		# REF https://skorks.com/2009/09/using-bash-to-output-to-screen-and-file-at-the-same-time/  # Using Bash To Output To Screen And File At The Same Time
-		# ls - garbage 3>&1 1>/dev/null 2>&3- | tee blah.txt  
+		# ls - garbage 3>&1 1>/dev/null 2>&3- | tee blah.txt
 		# yarn install 3>&1 1>/dev/null 2>&3- | tee .project_list_yarn_install_log
 		yarn install 2>&1 | tee .project_list_yarn_install_log
     	# YARN_PASSED=$(yarn install 3>&1 1>/dev/null 2>&3- | tee .project_list_yarn_install_log)
     	YARN_PASSED=$(<.project_list_yarn_install_log)
-    	if (has_error_keyword "${YARN_PASSED}") ; then 
+    	if (has_error_keyword "${YARN_PASSED}") ; then
     	{
-    		results_failed "yarn install" 
+    		results_failed "yarn install"
     		echo -e "${YARN_PASSED}"
-    		failed "yarn install" 
+    		failed "yarn install"
     		if [[ "${YARN_PASSED}" == *"Warning: Could not find"* ]] ; then
     		{
     			YARN_INSTALL_GLOBALS=$(echo "${YARN_PASSED}" | grep "Warning: Could not find" | sed s/"Warning: Could not find "//g |  sed s/"in global npm."//g )
-    			while read -r YARN_INSTALL_GLOBAL; do                                        
+    			while read -r YARN_INSTALL_GLOBAL; do
 				  {
-				    
+
 				    if [ ! -z "${YARN_INSTALL_GLOBAL}" ] ; then # if not empty
 				    {
-				    	anounce "${YARN_INSTALL_GLOBAL} is missing" 
+				    	anounce "${YARN_INSTALL_GLOBAL} is missing"
 				    	warning installing now global "${YARN_INSTALL_GLOBAL}"
 				    	yarn global add "${YARN_INSTALL_GLOBAL}"  2>&1 | tee .project_list_yarn2_install_log
 				      	wait
@@ -175,36 +175,36 @@ yarn_install(){
 				done <<< "${YARN_INSTALL_GLOBALS}"
 		    	yarn install 2>&1 | tee .project_list_yarn_install_log
 		    	YARN_PASSED=$(<.project_list_yarn_install_log)
-		    	if (has_error_keyword "${YARN_PASSED}") ; then 
+		    	if (has_error_keyword "${YARN_PASSED}") ; then
 	    		{
 	    			results_failed
 		    		echo -e "${YARN_PASSED}"
-		    		failed "yarn install" 
+		    		failed "yarn install"
 		    	}
 		    	else
 		    	{
-		    		passed "yarn install" 
-		    		results_passed "yarn install" 
-		    	} 
+		    		passed "yarn install"
+		    		results_passed "yarn install"
+		    	}
 		    	fi
     		}
     		fi
     	}
     	else
     	{
-    		passed "yarn install" 
-    		results_passed "yarn install" 
-    	} 
+    		passed "yarn install"
+    		results_passed "yarn install"
+    	}
     	fi
 
 	}
-	fi 
+	fi
 	wait
 }
 
 npm_install(){
 	local NODE_VER NPM_PASSED
-	if [ -e package-lock.json ] ; then 
+	if [ -e package-lock.json ] ; then
 	{
 
 		# nvm fix
@@ -212,22 +212,22 @@ npm_install(){
 		[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 		[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-		if [ -e .nvmrc ] ; then 
+		if [ -e .nvmrc ] ; then
 		{
 			NODE_VER=$(<.nvmrc)
-		} 
+		}
 		else
 		{
-			if [ -e package-lock.json ] ; then 
+			if [ -e package-lock.json ] ; then
 			{
 				NODE_VER=$(cat package-lock.json | grep @types/node/-/node- | cut -d- -f3 | cut -d'#' -f1  | sed s/.tgz//)
 			}
 			fi
 
-			if [ -z ${NODE_VER} ] && [ -e package.json ] ; then 
+			if [ -z ${NODE_VER} ] && [ -e package.json ] ; then
 			{
-				NODE_VER=$(cat package.json | grep '"node"' | cut -d'"' -f4) 
-				if [ -z ${NODE_VER} ] && [ -e package.json ] ; then 
+				NODE_VER=$(cat package.json | grep '"node"' | cut -d'"' -f4)
+				if [ -z ${NODE_VER} ] && [ -e package.json ] ; then
 				{
 					NODE_VER=($(cat package.json | grep "'node'" | cut -d"'" -f4) )
 				}
@@ -238,24 +238,24 @@ npm_install(){
 		}
 		fi
 
-		if [ -z ${NODE_VER} ] && [ -e package.json ] ; then 
+		if [ -z ${NODE_VER} ] && [ -e package.json ] ; then
 		{
 			NODE_VER="stable"
 		}
 		fi
 
-		if  [ ! -z ${NODE_VER} ] && (! version_installed_is  "node --version"  "${NODE_VER}") ; then 
+		if  [ ! -z ${NODE_VER} ] && (! version_installed_is  "node --version"  "${NODE_VER}") ; then
 		{
-    		passed "Correct Node Version: ${NODE_VER}"	
-		} 
-	    else 
+    		passed "Correct Node Version: ${NODE_VER}"
+		}
+	    else
 	    {
-	    	warning "incorrect node Version: ${NODE_VER}"	
-	    	if  (version_installed_is  "nvm ls"  "node-${NODE_VER}") ; then 
+	    	warning "incorrect node Version: ${NODE_VER}"
+	    	if  (version_installed_is  "nvm ls"  "node-${NODE_VER}") ; then
 	    	{
-				nvm use "${NODE_VER}"	
-			} 
-		    else 
+				nvm use "${NODE_VER}"
+			}
+		    else
 		    {
 	    		nvm install "${NODE_VER}"
 	    		wait
@@ -267,25 +267,25 @@ npm_install(){
 		verify_installed_version "node --version"  "${NODE_VER}"
 		echo "yarn"
 		# REF https://skorks.com/2009/09/using-bash-to-output-to-screen-and-file-at-the-same-time/  # Using Bash To Output To Screen And File At The Same Time
-		# ls - garbage 3>&1 1>/dev/null 2>&3- | tee blah.txt  
+		# ls - garbage 3>&1 1>/dev/null 2>&3- | tee blah.txt
 		# npm install 3>&1 1>/dev/null 2>&3- | tee .project_list_npm_install_log
 		npm install 2>&1 | tee .project_list_npm_install_log
     	# NPM_PASSED=$(npm install 3>&1 1>/dev/null 2>&3- | tee .project_list_npm_install_log)
     	NPM_PASSED=$(<.project_list_npm_install_log)
-    	if (has_error_keyword "${NPM_PASSED}") ; then 
+    	if (has_error_keyword "${NPM_PASSED}") ; then
     	{
-    		results_failed "npm install" 
+    		results_failed "npm install"
     		echo -e "${NPM_PASSED}"
-    		failed "npm install" 
+    		failed "npm install"
     		if [[ "${NPM_PASSED}" == *"Warning: Could not find"* ]] ; then
     		{
     			local NPM_GLOBAL_INSTALL NPM_GLOBAL_INSTALLS=$(echo "${NPM_PASSED}" | grep "Warning: Could not find" | sed s/"Warning: Could not find "//g |  sed s/"in global npm."//g )
-    			while read -r NPM_GLOBAL_INSTALL; do                                        
+    			while read -r NPM_GLOBAL_INSTALL; do
 				  {
-				    
+
 				    if [ ! -z "${NPM_GLOBAL_INSTALL}" ] ; then # if not empty
 				    {
-				    	anounce "${NPM_GLOBAL_INSTALL} is missing" 
+				    	anounce "${NPM_GLOBAL_INSTALL} is missing"
 				    	warning installing now global "${NPM_GLOBAL_INSTALL}"
 				    	npm -g install "${NPM_GLOBAL_INSTALL}"  2>&1 | tee .project_list_npm2_install_log
 				      	wait
@@ -295,54 +295,54 @@ npm_install(){
 				done <<< "${NPM_GLOBAL_INSTALLS}"
 		    	npm install 2>&1 | tee .project_list_npm_install_log
 		    	NPM_PASSED=$(<.project_list_npm_install_log)
-		    	if (has_error_keyword "${NPM_PASSED}") ; then 
+		    	if (has_error_keyword "${NPM_PASSED}") ; then
 	    		{
-	    			results_failed "npm install" 
+	    			results_failed "npm install"
 		    		echo -e "${NPM_PASSED}"
-		    		failed "npm install" 
+		    		failed "npm install"
 		    	}
 		    	else
 		    	{
-		    		passed "npm install" 
-		    		results_passed "npm install" 
-		    	} 
+		    		passed "npm install"
+		    		results_passed "npm install"
+		    	}
 		    	fi
     		}
     		fi
     	}
     	else
     	{
-    		passed "npm install" 
-    		results_passed "npm install" 
-    	} 
+    		passed "npm install"
+    		results_passed "npm install"
+    	}
     	fi
 
 	}
-	fi 
+	fi
 	wait
 }
 
 docker_install(){
 	local DOCKER_PASSED
-    if  [ -e docker-compose.yml ] ; then 
+    if  [ -e docker-compose.yml ] ; then
 	{
 		echo "dockler-compose"
 		docker-compose build 2>&1 | tee .project_list_docker_install_log
 		DOCKER_PASSED=$(<.project_list_docker_install_log)
-    	if (has_error_keyword "${DOCKER_PASSED}") ; then 
+    	if (has_error_keyword "${DOCKER_PASSED}") ; then
     	{
-    		results_failed "docker-compose build" 
+    		results_failed "docker-compose build"
     		echo -e "${DOCKER_PASSED}"
-    		failed "docker-compose build" 
+    		failed "docker-compose build"
     	}
     	else
     	{
-    		passed "docker-compose build" 
-    		results_passed "docker-compose build" 
-    	} 
+    		passed "docker-compose build"
+    		results_passed "docker-compose build"
+    	}
     	fi
 	}
-	fi 
+	fi
 }
 
 bundle_install(){
@@ -350,26 +350,26 @@ bundle_install(){
 
 	export PATH="$PATH:$HOME/.rvm/bin"
 
-	if [ -e Gemfile.lock ] ; then 
+	if [ -e Gemfile.lock ] ; then
 	{
 		echo "Check Ruby Version"
-		if [ -e .ruby-version ] ; then 
+		if [ -e .ruby-version ] ; then
 		{
 			RUBY_VER=$(<.ruby-version)
-		} 
+		}
 		else
 		{
-			if [ -e Gemfile ] ; then 
+			if [ -e Gemfile ] ; then
 			{
 				RUBY_VER=$(cat Gemfile | grep "^ruby" | cut -d\' -f2)
-				if  (version_installed_is  "ruby --version"  "ruby ${RUBY_VER}") ; then 
+				if  (version_installed_is  "ruby --version"  "ruby ${RUBY_VER}") ; then
 				{
-		    		passed "Correct Ruby Version: ${RUBY_VER}"	
-				} 
-			    else 
+		    		passed "Correct Ruby Version: ${RUBY_VER}"
+				}
+			    else
 			    {
-			    	warning "incorrect Ruby Version: ${RUBY_VER}"	
-			 
+			    	warning "incorrect Ruby Version: ${RUBY_VER}"
+
 				}
 				fi
 			}
@@ -378,18 +378,18 @@ bundle_install(){
 		}
 		fi
 
-		if  [ ! -z ${RUBY_VER} ] && (! version_installed_is  "ruby --version"  "${RUBY_VER}") ; then 
+		if  [ ! -z ${RUBY_VER} ] && (! version_installed_is  "ruby --version"  "${RUBY_VER}") ; then
 		{
-    		passed "Correct Ruby Version: ${RUBY_VER}"	
-		} 
-	    else 
+    		passed "Correct Ruby Version: ${RUBY_VER}"
+		}
+	    else
 	    {
-	    	warning "incorrect Ruby Version: ${RUBY_VER}"	
-	    	if  (version_installed_is  "rvm ls"  "${RUBY_VER}") ; then 
+	    	warning "incorrect Ruby Version: ${RUBY_VER}"
+	    	if  (version_installed_is  "rvm ls"  "${RUBY_VER}") ; then
 	    	{
-				rvm use "${RUBY_VER}"	
-			} 
-		    else 
+				rvm use "${RUBY_VER}"
+			}
+		    else
 		    {
 		    	export LDFLAGS="-L/usr/local/opt/openssl/lib"
   				export CPPFLAGS="-I/usr/local/opt/openssl/include"
@@ -406,24 +406,24 @@ bundle_install(){
 		verify_installed_version "ruby --version"  "${RUBY_VER}"
 		echo "bundler"
 		# REF https://skorks.com/2009/09/using-bash-to-output-to-screen-and-file-at-the-same-time/  # Using Bash To Output To Screen And File At The Same Time
-		# ls - garbage 3>&1 1>/dev/null 2>&3- | tee blah.txt  
+		# ls - garbage 3>&1 1>/dev/null 2>&3- | tee blah.txt
 		bundle install  2>&1 | tee .project_list_bundle_install_log
     	# BUNDLE_PASSED=$(bundle install 3>&1 1>/dev/null 2>&3- | tee .project_list_bundle_install_log)
     	BUNDLE_PASSED=$(<.project_list_bundle_install_log)
-    	if (has_error_keyword "${BUNDLE_PASSED}") ; then 
+    	if (has_error_keyword "${BUNDLE_PASSED}") ; then
     	{
     		results_failed
     		echo -e "${BUNDLE_PASSED}"
-    		failed "bundle install" 
+    		failed "bundle install"
     		anounce Attempting to do again
 			# EXECUTE_GEM_INSTALL=$(echo "${BUNDLE_PASSED}" | extract_something_trimmed_between "Make sure that `" "` succeeds before bundling.")
 	    	local EXECUTE_GEM EXECUTE_GEMS=$(echo "${BUNDLE_PASSED}" | grep "Make sure that" | sed s/gem/\\\ngem/g | grep gem | sed s/gem//g )
-	    	while read -r EXECUTE_GEM; do                                        
+	    	while read -r EXECUTE_GEM; do
 			  {
-			    
+
 			    if [ ! -z "${EXECUTE_GEM}" ] ; then # if not empty
 			    {
-			    	anounce "${EXECUTE_GEM} is missing" 
+			    	anounce "${EXECUTE_GEM} is missing"
 			    	gem ${EXECUTE_GEM} 'http://rubygems.org/' 2>&1 | tee .project_list_bundle2_install_log
 			      	wait
 			    }
@@ -432,32 +432,32 @@ bundle_install(){
 			done <<< "${EXECUTE_GEMS}"
 	    	bundle install  2>&1 | tee .project_list_bundle_install_log
 	    	BUNDLE_PASSED=$(<.project_list_bundle_install_log)
-	    	if (has_error_keyword "${BUNDLE_PASSED}") ; then 
+	    	if (has_error_keyword "${BUNDLE_PASSED}") ; then
     		{
     			results_failed
 	    		echo -e "${BUNDLE_PASSED}"
-	    		failed "bundle install" 
+	    		failed "bundle install"
 	    	}
 	    	else
 	    	{
-	    		passed "bundle install" 
-	    		results_passed "bundle install" 
+	    		passed "bundle install"
+	    		results_passed "bundle install"
 	    		[ -f bin/rails ] && bundle exec rails db:migrate RAILS_ENV=development
 	    		[ -f bin/rails ] && bin/rails db:migrate RAILS_ENV=development
-	    	} 
+	    	}
 	    	fi
     	}
     	else
     	{
-    		passed "bundle install" 
-    		results_passed "bundle install" 
+    		passed "bundle install"
+    		results_passed "bundle install"
     		[ -f bin/rails ] && bundle exec rails db:migrate RAILS_ENV=development
     		[ -f bin/rails ] && bin/rails db:migrate RAILS_ENV=development
-    	} 
+    	}
     	fi
 
 	}
-	fi 
+	fi
 	wait
 }
 
@@ -472,7 +472,7 @@ process_list_repos(){
 	local _repos=${@}
 	local SAVDCD=$(pwd)
 	local REPO_NAME
-	while read -r LINE; do                                        
+	while read -r LINE; do
 	  {
 	  	# ➜  projects [ -z "" ] && echo "hola"
 		# hola
@@ -485,20 +485,20 @@ process_list_repos(){
 	    [ -z "${LINE}" ] && continue  # if not empty
 	    # if [ ! -z "${LINE}" ] ; then # if not empty
 	    # {
-	    	if [[ "${LINE}" = *":"* ]] ; then 
+	    	if [[ "${LINE}" = *":"* ]] ; then
 	    	{
 	    		REPO_NAME=$(echo "${LINE}" | cut -d':' -f2)
 	    		continue
-	    	} 
+	    	}
 	    	fi
 	    	[ -z "${REPO_NAME}" ] && continue  # if not empty
 	    	# if [ ! -z "${REPO_NAME}" ] ; then # if  not empty
 	    	# {
-	    		anounce "${LINE}" - $GREEN"git@github.com:${REPO_NAME}/${LINE}.git" 
+	    		anounce "${LINE}" - $GREEN"git@github.com:${REPO_NAME}/${LINE}.git"
 		    	if [ ! -d "${SAVDCD}/${LINE}" ] ; then # if not empty
 		    	{
-		        	git clone --recurse-submodules "git@github.com:${REPO_NAME}/${LINE}.git" 
-				} 
+		        	git clone --recurse-submodules "git@github.com:${REPO_NAME}/${LINE}.git"
+				}
 			    else
 			    {
 			    	cd "${SAVDCD}/${LINE}"
@@ -527,9 +527,9 @@ remove_list_repos(){
 	local LINE
 	local _repos=${@}
 	local SAVDCD=$(pwd)
-	while read -r LINE; do                                        
+	while read -r LINE; do
 	  {
-	    
+
 	    if [ ! -z "${LINE}" ] ; then # if not empty
 	    {
 	    	anounce "${SAVDCD}/${LINE} - remove "
@@ -545,10 +545,40 @@ remove_list_repos(){
 	done <<< "${_repos}"
 }
 
+process_add_ignores(){
 
+	local EXCLUDE_GITNORES="
+	.project_list_bundle_install_log
+	.project_list_docker_install_log
+	.project_list_yarn_install_log
+	"
+	local GITNORE=$(<~/.config/git/ignore)
+	local LINE
 
-# README: 
-# Sample Script of how to use this script. Create an script to call this script 
+	if [ ! -f ~/.config/git/ignore ] ; then
+	{
+		mkdir -p ~/.config/git/
+		touch ~/.config/git/ignore
+		GITNORE=""
+	}
+	fi
+
+	while read -r LINE; do
+	  {
+
+	    if [ ! -z "${LINE}" ] ; then # if not empty
+	    {
+	    	anounce 'echo "${LINE}" >> ~/.config/git/ignore"'
+	      	echo "${LINE}" >> ~/.config/git/ignore
+	    }
+	    fi
+	  }
+	done <<< "${EXCLUDE_GITNORES}"
+}
+process_add_ignores
+
+# README:
+# Sample Script of how to use this script. Create an script to call this script
 #!/bin/bash
 #
 # @author Zeus Intuivo <zeus@intuivo.com>
