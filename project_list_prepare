@@ -549,8 +549,12 @@ process_add_ignores(){
 
 	local EXCLUDE_GITNORES="
 	.project_list_bundle_install_log
+	.project_list_bundle2_install_log
 	.project_list_docker_install_log
+	.project_list_npm_install_log
+	.project_list_npm2_install_log
 	.project_list_yarn_install_log
+	.project_list_yarn2_install_log
 	"
 	local GITNORE=$(<~/.config/git/ignore)
 	local LINE
@@ -568,8 +572,12 @@ process_add_ignores(){
 
 	    if [ ! -z "${LINE}" ] ; then # if not empty
 	    {
-	    	anounce 'echo "${LINE}" >> ~/.config/git/ignore"'
-	      	echo "${LINE}" >> ~/.config/git/ignore
+	    	if [ ! -z "${GITNORE}" ] && [[ "${LINE}" != *"${GITNORE}"* ]] ; then
+	    	{
+		    	anounce echo "${LINE}" \>\> \~/.config/git/ignore
+		      	echo "${LINE}" >> ~/.config/git/ignore
+	    	}
+	    	fi
 	    }
 	    fi
 	  }
