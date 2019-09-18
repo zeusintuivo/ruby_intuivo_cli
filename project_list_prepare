@@ -472,6 +472,8 @@ process_list_repos(){
 	local _repos=${@}
 	local SAVDCD=$(pwd)
 	local REPO_NAME
+	local TYPE_COMMAND
+	local PROVIDER="git@github.com"
 	while read -r LINE; do
 	  {
 	  	# ➜  projects [ -z "" ] && echo "hola"
@@ -487,17 +489,25 @@ process_list_repos(){
 	    # {
 	    	if [[ "${LINE}" = *":"* ]] ; then
 	    	{
-	    		REPO_NAME=$(echo "${LINE}" | cut -d':' -f2)
-	    		continue
+				TYPE_COMMAND=$(echo "${LINE}" | cut -d':' -f1)
+	    		if [[ "${TYPE_COMMAND}" = *"PROVIDER"* ]] ; then
+	    		{
+					PROVIDER=$(echo "${LINE}" | cut -d':' -f2)
+	    			continue
+				} else {
+					REPO_NAME=$(echo "${LINE}" | cut -d':' -f2)
+					continue
+				}
+				fi
 	    	}
 	    	fi
 	    	[ -z "${REPO_NAME}" ] && continue  # if not empty
 	    	# if [ ! -z "${REPO_NAME}" ] ; then # if  not empty
 	    	# {
-	    		anounce "${LINE}" - $GREEN"git@github.com:${REPO_NAME}/${LINE}.git"
+	    		anounce "${LINE}" - $GREEN"${PROVIDER}:${REPO_NAME}/${LINE}.git"
 		    	if [ ! -d "${SAVDCD}/${LINE}" ] ; then # if not empty
 		    	{
-		        	git clone --recurse-submodules "git@github.com:${REPO_NAME}/${LINE}.git"
+		        	git clone --recurse-submodules "${PROVIDER}:${REPO_NAME}/${LINE}.git"
 				}
 			    else
 			    {
@@ -602,6 +612,8 @@ process_add_ignores
 #
 # REPOS="
 #
+# PROVIDER:git@github.com
+# PROVIDER:git@bitbucket.org
 # 1:repository
 # repo_name_1_inside_1
 # repon_name_2_inside_1
