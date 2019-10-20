@@ -7,7 +7,7 @@
 # Helper For testing downloading a list of subfolders
 load_execute_commands_wget(){
         local URL=""
-        local cached_directory="/Users/benutzer/_/clis/execute_command_intuivo_cli/"
+        local cached_directory="/Users/benutzer$HOME/_/clis/execute_command_intuivo_cli/"
         local EXECOMCLI=""
         local provider=""
         [   -d "${cached_directory}" ] &&  provider="file://${cached_directory}"
@@ -45,7 +45,7 @@ load_execute_commands_wget
 
 load_extract_something_trimmed_between(){
         local URL=""
-        local cached_directory="/Users/benutzer/_/clis/journal_intuivo_cli/"
+        local cached_directory="/Users/benutzer$HOME/_/clis/journal_intuivo_cli/"
         local EXECOMCLI=""
         local provider=""
         [   -d "${cached_directory}" ] &&  provider="file://${cached_directory}"
@@ -602,7 +602,7 @@ process_add_ignores
 # @author Zeus Intuivo <zeus@intuivo.com>
 #
 # load_project_list_prepare_wget(){
-#     local provider="/Users/benutzer/_/clis/ruby_intuivo_cli/project_list_prepare"
+#     local provider="/Users/benutzer$HOME/_/clis/ruby_intuivo_cli/project_list_prepare"
 #     [   -e "${provider}"  ] && source "${provider}"
 #    [ ! -e "${provider}"  ] && eval """$(wget --quiet --no-check-certificate  https://raw.githubusercontent.com/zeusintuivo/ruby_intuivo_cli/master/project_list_prepare -O -  2>/dev/null )"""   # suppress only wget download messages, but keep wget output for variable
 #    ( ( ! command -v type passed >/dev/null 2>&1;) && echo -e "\n \n  ERROR! Loading project_list_prepare \n \n " && exit 69; )
