@@ -24,9 +24,9 @@ load_execute_commands_wget(){
             {
                 URL="${provider}${ONE_SCRIPT}"
                 [   -d "${cached_directory}" ] && source "${cached_directory}${ONE_SCRIPT}"
-                [   -d "${cached_directory}" ] && ( command -v type passed >/dev/null 2>&1;) && passed "${cached_directory}${ONE_SCRIPT} Loaded"
+                [   -d "${cached_directory}" ] && ( command -v passed >/dev/null 2>&1;) && passed "${cached_directory}${ONE_SCRIPT} Loaded"
                 [ ! -d "${cached_directory}" ] && eval """$(wget --quiet --no-check-certificate $URL  -O -  2>/dev/null )"""   # suppress only wget download messages, but keep wget output for variable
-                [ ! -d "${cached_directory}" ] && ( command -v type passed >/dev/null 2>&1;) && passed "$URL Loaded"
+                [ ! -d "${cached_directory}" ] && ( command -v passed >/dev/null 2>&1;) && passed "$URL Loaded"
 
             }
             fi
@@ -37,7 +37,7 @@ load_execute_commands_wget(){
         unset ONE_SCRIPT
         unset BASH_SCRIPTS
         unset provider
-        ( ( ! command -v type passed >/dev/null 2>&1;) && echo -e "\n \n  ERROR! Loading struct_testing \n \n " && exit 69; )
+        ( ( ! command -v passed >/dev/null 2>&1;) && echo -e "\n \n  ERROR! Loading struct_testing \n \n " && exit 69; )
     }
     # end load_execute_commands_wget
 load_execute_commands_wget
@@ -60,9 +60,9 @@ load_extract_something_trimmed_between(){
             {
                 URL="${provider}${ONE_SCRIPT}"
                 [   -d "${cached_directory}" ] && source "${cached_directory}${ONE_SCRIPT}"
-                [   -d "${cached_directory}" ] && ( command -v type extract_something_trimmed_between >/dev/null 2>&1;) && passed "${cached_directory}${ONE_SCRIPT} Loaded"
+                [   -d "${cached_directory}" ] && ( command -v extract_something_trimmed_between >/dev/null 2>&1;) && passed "${cached_directory}${ONE_SCRIPT} Loaded"
                 [ ! -d "${cached_directory}" ] && eval """$(wget --quiet --no-check-certificate $URL  -O -  2>/dev/null )"""   # suppress only wget download messages, but keep wget output for variable
-                [ ! -d "${cached_directory}" ] && ( command -v type extract_something_trimmed_between >/dev/null 2>&1;) && passed "$URL Loaded"
+                [ ! -d "${cached_directory}" ] && ( command -v extract_something_trimmed_between >/dev/null 2>&1;) && passed "$URL Loaded"
 
             }
             fi
@@ -73,7 +73,7 @@ load_extract_something_trimmed_between(){
         unset ONE_SCRIPT
         unset BASH_SCRIPTS
         unset provider
-        ( ( ! command -v type extract_something_trimmed_between >/dev/null 2>&1;) && echo -e "\n \n  ERROR! Loading extract_something_trimmed_between \n \n " && exit 69; )
+        ( ( ! command -v extract_something_trimmed_between >/dev/null 2>&1;) && echo -e "\n \n  ERROR! Loading extract_something_trimmed_between \n \n " && exit 69; )
     }
     # end load_extract_something_trimmed_between
 load_extract_something_trimmed_between
@@ -605,7 +605,7 @@ process_add_ignores
 #     local provider="$HOME/_/clis/ruby_intuivo_cli/project_list_prepare"
 #     [   -e "${provider}"  ] && source "${provider}"
 #    [ ! -e "${provider}"  ] && eval """$(wget --quiet --no-check-certificate  https://raw.githubusercontent.com/zeusintuivo/ruby_intuivo_cli/master/project_list_prepare -O -  2>/dev/null )"""   # suppress only wget download messages, but keep wget output for variable
-#    ( ( ! command -v type passed >/dev/null 2>&1;) && echo -e "\n \n  ERROR! Loading project_list_prepare \n \n " && exit 69; )
+#    ( ( ! command -v passed >/dev/null 2>&1;) && echo -e "\n \n  ERROR! Loading project_list_prepare \n \n " && exit 69; )
 # }
 # end load_project_list_prepare_wget
 # load_project_list_prepare_wget
