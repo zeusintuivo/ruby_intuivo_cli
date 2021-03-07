@@ -538,18 +538,6 @@ ${CERO} ${THISSCRIPTNAME} Installs nvm, npm, phantomjs and caspterjs
 
 
 
-
-                                                                               ##     ##    ###    #### ##    ##
-                                                                               ###   ###   ## ##    ##  ###   ##
-                                                                               #### ####  ##   ##   ##  ####  ##
-                                                                               ## ### ## ##     ##  ##  ## ## ##
-                                                                               ##     ## #########  ##  ##  ####
-                                                                               ##     ## ##     ##  ##  ##   ###
-                                                                               ##     ## ##     ## #### ##    ##
-
-
-
-
 #                                              #
 #                                              #
 ###                MAIN START               ####
@@ -557,46 +545,72 @@ ${CERO} ${THISSCRIPTNAME} Installs nvm, npm, phantomjs and caspterjs
 #                                              #
 
 
+                                       ##     ##    ###    #### ##    ##
+                                       ###   ###   ## ##    ##  ###   ##
+                                       #### ####  ##   ##   ##  ####  ##
+                                       ## ### ## ##     ##  ##  ## ## ##
+                                       ##     ## #########  ##  ##  ####
+                                       ##     ## ##     ##  ##  ##   ###
+                                       ##     ## ##     ## #### ##    ##
 
+_ubuntu__64() {
+  # REF: https://phantomjs.org/build.html
+  sudo apt-get install build-essential g++ flex bison gperf ruby perl \
+    libsqlite3-dev libfontconfig1-dev libicu-dev libfreetype6 libssl-dev \
+    libpng-dev libjpeg-dev python libx11-dev libxext-dev -y
 
-
-phantomjs_version="1.9.8"
-test_phantomjs_version=""
-if [ ! -z "${1}" ] ;  then
+  phantomjs_version="1.9.8"
+  test_phantomjs_version=""
+  if [ ! -z "${1}" ] ;  then
     phantomjs_version="${1}"
     test_phantomjs_version="${1}"
-fi
+  fi
 
-node_version="stable"
-test_node_version=""
-if [ ! -z "${2}" ] ;  then
+  node_version="stable"
+  test_node_version=""
+  if [ ! -z "${2}" ] ;  then
     node_version="${2}"
     test_node_version="${2}"
-fi
+  fi
 
-casper_version="1.1.4"
-casper_version=""
-test_casper_version=""
-if [ ! -z "${3}" ] ;  then
+  casper_version="1.1.4"
+  casper_version=""
+  test_casper_version=""
+  if [ ! -z "${3}" ] ;  then
     casper_version="${3}"
     test_casper_version="${3}"
-fi
+  fi
 
 
-load_colors_script_name_and_break_trap
-display_help
+  load_colors_script_name_and_break_trap
+  display_help
 
-check_wget_or_curl_are_installed
+  check_wget_or_curl_are_installed
 
-nvm_install
-node_install "${node_version}"
-#phantomjs_install "${phantomjs_version}"
-install_phantom_js_using_download "${phantomjs_version}"
-casper_install "${casper_version}"
+  nvm_install
+  node_install "${node_version}"
+  #phantomjs_install "${phantomjs_version}"
+  install_phantom_js_using_download "${phantomjs_version}"
+  casper_install "${casper_version}"
 
-verify_installations
+  verify_installations
 
-[[ ! -z "${test_node_version}" ]] && verify_installed_version "node --version"  "${test_node_version}"
-[[ ! -z "${test_phantomjs_version}" ]] && verify_installed_version "phantomjs --version"  "${test_phantomjs_version}"
-[[ ! -z "${test_casper_version}" ]] && verify_installed_version "casperjs --version"  "${test_casper_version}"
+  [[ ! -z "${test_node_version}" ]] && verify_installed_version "node --version"  "${test_node_version}"
+  [[ ! -z "${test_phantomjs_version}" ]] && verify_installed_version "phantomjs --version"  "${test_phantomjs_version}"
+  [[ ! -z "${test_casper_version}" ]] && verify_installed_version "casperjs --version"  "${test_casper_version}"
+} # end
 
+_fedora__64() {
+  sudo dnf install gcc gcc-c++ make flex bison gperf ruby \
+    openssl-devel freetype-devel fontconfig-devel libicu-devel sqlite-devel \
+      libpng-devel libjpeg-devel -y
+
+} # end
+
+_main() {
+  determine_os_and_fire_action
+} # end _main
+
+_main
+
+echo ":)"
