@@ -4,15 +4,122 @@
 #
 #
 #colors
-[[ -z "${CYAN}" ]] && CYAN="\\033[38;5;123m"
-[[ -z "${PURPLE_BLUE}" ]] && PURPLE_BLUE="\\033[38;5;93m"
-[[ -z "${GRAY241}" ]] && GRAY241="\\033[38;5;241m"
-[[ -z "${RED}" ]] && RED="\\033[38;5;1m"
+[[ -z "${BLACK}" ]] && BLACK="\\033[38;5;16m"
 [[ -z "${BRIGHT_BLUE87}" ]] && BRIGHT_BLUE87="\\033[38;5;87m"
+[[ -z "${CYAN}" ]] && CYAN="\\033[38;5;123m"
+[[ -z "${GRAY241}" ]] && GRAY241="\\033[38;5;241m"
+[[ -z "${GREEN}" ]] && GREEN="\\033[38;5;22m"
+[[ -z "${PURPLE_BLUE}" ]] && PURPLE_BLUE="\\033[38;5;93m"
+[[ -z "${PURPLE}" ]] && PURPLE="\\033[01;35m"
+[[ -z "${RED}" ]] && RED="\\033[38;5;1m"
+[[ -z "${RESET_PROMPT}" ]] && RESET_PROMPT="[0m"
 [[ -z "${RESET}" ]] && RESET="\\033[0m"
 [[ -z "${YELLOW220}" ]] && YELLOW220="\\033[38;5;220m"
+[[ -z "${YELLOW226}" ]] && YELLOW226="\\033[38;5;226m"
+[[ -z "${YELLOW}" ]] && YELLOW="\\033[01;33m"
+
 
 THISSCRIPTNAME=`basename "$0"`
+#
+# C H E C K   R E P L A C E   F U N C T I O N S   I N S T A L L E D  --Start
+#
+check_replacer () {
+  local REPLACER="$1"
+  if command -v "${REPLACER}" >/dev/null 2>&1; then
+    # It looks installed
+    # .. is it working properly
+    # msg_green " ${1} INSTALLED."
+
+    #stdout UND stderr -capture  REF: https://www.thomas-krenn.com/de/wiki/Bash_stdout_und_stderr_umleiten
+    ${REPLACER}  --version &> /tmp/ersetze_test_${REPLACER}.txt
+    local PROPERLYWORKING=$(cat /tmp/ersetze_test_${REPLACER}.txt)
+
+    if [[ "$PROPERLYWORKING" == *"dyld:"* ]]; then { echo "error"; return;} fi
+    if [[ $PROPERLYWORKING == *"GNU"* ]]; then { echo "GNU"; return;} else { echo "MAC";return;} fi
+    echo "checked";
+    return;
+  else
+    # msg_red "${GREEN} ${RED} CANNOT REPLACE ...${1} IS MISSING ";
+    # msg_red " NEED TO INSTALL ${1}.       Linux:    sudo apt-get install ${1}         Mac:     brew install ${1}   "
+    echo "install";
+    return;
+  fi
+}
+msg_install () {
+  msg_red "${GREEN} ${RED} CANNOT REPLACE ...${1} IS MISSING ";
+  msg_red " NEED TO INSTALL ${1}.       Linux:    sudo apt-get install ${1} / sudo dnf install ${1}          Mac:     brew install ${1}   "
+}
+# REPLACER="sed";
+# Try vim's ex
+REPLACER="sed";
+VALIDREPLACER=$(check_replacer "${REPLACER}")
+
+
+if [[ $VALIDREPLACER == "error" ]] ; then
+  msg_red "Error with replacer ${REPLACER}"
+  msg_red " - Error:"
+  cat /tmp/ersetze_test_${REPLACER}.txt
+   rm /tmp/ersetze_test_${REPLACER}.txt
+fi
+
+if [[ $VALIDREPLACER == "install" ]] ; then
+  msg_install "${REPLACER}"
+fi
+rm /tmp/ersetze_test_${REPLACER}.txt
+
+# TODO - Remove Repetition HERE
+# ? empty still
+if [[ $VALIDREPLACER == "install" || $VALIDREPLACER == "error"  ]] ; then
+  REPLACER="sed";
+  VALIDREPLACER=$(check_replacer "${REPLACER}")
+
+  if [[ $VALIDREPLACER == "error" ]] ; then
+    msg_red "Error with replacer ${REPLACER}"
+    msg_red " - Error:"
+    cat /tmp/ersetze_test_${REPLACER}.txt
+     rm /tmp/ersetze_test_${REPLACER}.txt
+    exit 1;
+  fi
+
+  if [[ $VALIDREPLACER == "install" ]] ; then
+    msg_install "${REPLACER}"
+    rm /tmp/ersetze_test_${REPLACER}.txt
+    exit 1;
+  fi
+fi
+
+
+
+REPLACERGNU="NO"
+if [[ $VALIDREPLACER == "GNU" ]] ; then
+  REPLACERGNU="YES"
+fi
+
+# Test
+# echo "REPLACERGNU: $REPLACERGNU"
+# echo "VALIDREPLACER: $VALIDREPLACER"
+# exit
+# C H E C K   R E P L A C E   F U N C T I O N S   I N S T A L L E D  -- RESULTS
+# Results as
+#             $REPLACERGNU  NO OR YES
+#             $REPLACERGNU  ex or sed
+#             halts execution if not found
+#
+# C H E C K   R E P L A C E   F U N C T I O N S   I N S T A L L E D  -- End
+
+if [[ $REPLACERGNU == "NO" ]] ; then
+  msg_install "This script only works well with Gnu SED 
+                On MAC
+                brew install gsed
+                which gsed 
+                /usr/local/bin/gsed
+                /usr/bin/sed
+                sudo mv /usr/bin/sed /usr/bin/sed_old
+                cd /usr/bin
+                sudo ln -s /usr/local/bin/gsed sed
+                "
+  exit 1;
+fi
 
 if [ ! -d .git ] ; then
 {
@@ -58,6 +165,9 @@ if ! command -v git >/dev/null 2>&1; then
 fi
 
 
+
+
+
 if command -v git_current_branch >/dev/null 2>&1; then
 {
   echo " "
@@ -78,6 +188,11 @@ else
   }
 }
 fi
+
+
+
+
+
 
 add_ssspaceSSS_to_name(){
     local ONE_FILE="${1}"
