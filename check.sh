@@ -474,10 +474,14 @@ find_rake_lib_and_add_it_to_temp_keys() {
     echo "      RAKE_EXECUTABLE : $RAKE_EXECUTABLE"
     if [ -f .temp_keys ] ; then
     {
-      local temp=$(escape_double_quotes <<< "${RAKE_EXECUTABLE}")
-      echo -e "\n"  >> .temp_keys
-      sed -i '/export RAKE_EXECUTABLE=/d' .temp_keys
-      echo "export RAKE_EXECUTABLE=\"$temp"\"   >> .temp_keys
+      if ! echo .temp_keys | grep "export RAKE_EXECUTABLE" ; then 
+      {
+        local temp=$(escape_double_quotes <<< "${RAKE_EXECUTABLE}")
+        echo -e "\n"  >> .temp_keys
+        sed -i '/export RAKE_EXECUTABLE=/d' .temp_keys
+        echo "export RAKE_EXECUTABLE=\"$temp"\"   >> .temp_keys
+      }
+      fi
     }
     fi
 } # end find_rake_lib_and_add_it_to_temp_keys
