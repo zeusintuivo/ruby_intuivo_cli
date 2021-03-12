@@ -122,7 +122,7 @@ echo -e "  +-- ${CYAN} Locating files that changes in this branch "
 echo -e "${PURPLE_BLUE}  +${GRAY241}"
 
 FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
-FILES2=$(git status -sb | egrep -v "^(\sD)" | egrep -v "^(\?\?\spublic/assets)" | egrep -v "##" | cut -c4- | egrep -v "commit_exception\.list|\.xls|\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
+FILES2=$(git status -sb | egrep -v "^(\sD)" | egrep -v "shared/pids/puma.state" | egrep -v "^(\?\?\spublic/assets)" | egrep -v "##" | cut -c4- | egrep -v "commit_exception\.list|\.xls|\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
 FILES="${FILES1}
 ${FILES2}"
 
@@ -258,7 +258,7 @@ find_location_rake_lib() {
   # ALTERNATIVE: local rake_version2=$(gem list rake | grep "^rake (*.*.*)" | extract_version) # Check and catch capture all stout sdout output, error will return none 0 to $?)
   local rake_location=$(which rake | sed 's/bin\/rake//g')
   local ruby_version=$(ruby --version | extract_version)
-  sudo -u root -i --  sudo updatedb
+  command -v updatedb >/dev/null 2>&1  && sudo -u root -i --  sudo updatedb
   # THIS_RUBY_VERSION=$(ruby --version  | cut -d' ' -f2 | cut -d'p' -f1)
 
   # Then get folder based on ruby version 2.2.5 and rake version 10.5.0 used for development
@@ -402,7 +402,17 @@ lib_folder_exists() {
 
 loader_file_exists() {
   local testing=$(echo "${RAKE_EXECUTABLE}" | remove_double_quotes | sed 's/ /\n/g' | grep -e "_loader.rb$" )
+  (( DEBUG )) && echo "${RAKE_EXECUTABLE}"
+  (( DEBUG )) && echo "echo \"${RAKE_EXECUTABLE}\" | remove_double_quotes"
+  (( DEBUG )) && echo "${RAKE_EXECUTABLE}" | remove_double_quotes 
+  (( DEBUG )) && echo "echo \"${RAKE_EXECUTABLE}\" | remove_double_quotes | sed 's/ /\n/g'"
+  (( DEBUG )) && echo "${RAKE_EXECUTABLE}" | remove_double_quotes | sed 's/ /\n/g'
+  (( DEBUG )) && echo "echo \"${RAKE_EXECUTABLE}\" | remove_double_quotes | sed 's/ /\n/g' | grep -e \"_loader.rb$\""
+  (( DEBUG )) && echo "${RAKE_EXECUTABLE}" | remove_double_quotes | sed 's/ /\n/g' | grep -e "_loader.rb$"
+  echo "[ ! -f  \"${testing}\"  ] && return 1"
+  [ ! -f  "${testing}"  ] && echo "+--- return 1"
   [ ! -f  "${testing}"  ] && return 1
+  [ ! -f  "${testing}"  ] && echo "+--- return 0"
   return 0
 } # end loader_file_exists
 
