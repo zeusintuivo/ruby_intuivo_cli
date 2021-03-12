@@ -18,6 +18,31 @@
 [[ -z "${YELLOW226}" ]] && YELLOW226="\\033[38;5;226m"
 [[ -z "${YELLOW}" ]] && YELLOW="\\033[01;33m"
 
+checkportmongo(){
+# exec 6<>/dev/tcp/ip.addr.of.server/27017
+# echo -e "GET / HTTP/1.0\n" >&6
+# cat <&6
+
+# exit 0
+
+# linux 
+# netstat -lnt | awk '$6 == "LISTEN" && $4 ~ /\.27017$/'
+# mac 
+# netstat -ant tcp | awk '$6 == "LISTEN" && $4 ~ /\.27017$/'
+
+if netstat -ant tcp | awk '$6 == "LISTEN" && $4 ~ /\.27017$/' >/dev/null 2>&1; then
+  # msg_red "ERROR MONGO NOT RUNING ON PORT 27017.      Check is install and running on that port   "
+  echo "PORT 27017 -- The mongo port seems responding "
+else
+  echo "ERROR MONGO NOT RUNING ON PORT 27017.      Check is install and running on that port   "
+  exit 1
+fi
+}
+checkportmongo 
+
+
+
+
 
 THISSCRIPTNAME=`basename "$0"`
 #
