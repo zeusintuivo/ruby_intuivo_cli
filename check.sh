@@ -25,9 +25,9 @@ checkportmongo(){
 
 # exit 0
 
-# linux 
+# linux
 # netstat -lnt | awk '$6 == "LISTEN" && $4 ~ /\.27017$/'
-# mac 
+# mac
 # netstat -ant tcp | awk '$6 == "LISTEN" && $4 ~ /\.27017$/'
 
 if netstat -ant tcp | awk '$6 == "LISTEN" && $4 ~ /\.27017$/' >/dev/null 2>&1; then
@@ -38,7 +38,7 @@ else
   exit 1
 fi
 }
-checkportmongo 
+checkportmongo
 
 
 
@@ -133,10 +133,10 @@ fi
 # C H E C K   R E P L A C E   F U N C T I O N S   I N S T A L L E D  -- End
 
 if [[ $REPLACERGNU == "NO" ]] ; then
-  msg_install "This script only works well with Gnu SED 
+  msg_install "This script only works well with Gnu SED
                 On MAC
                 brew install gsed
-                which gsed 
+                which gsed
                 /usr/local/bin/gsed
                 /usr/bin/sed
                 sudo mv /usr/bin/sed /usr/bin/sed_old
@@ -262,7 +262,7 @@ echo -e "  +-- ${CYAN} Locating files that changes in this branch "
 echo -e "${PURPLE_BLUE}  +${GRAY241}"
 
 FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
-FILES2=$(git status -sb | egrep -v "^(\sD)" | egrep -v "shared/pids/puma.state" | egrep -v "^(\?\?\spublic/assets)" | egrep -v "##" | cut -c4- | egrep -v "commit_exception\.list|\.xls|\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
+FILES2=$(git status -sb | egrep -v "^(\sD)" | egrep -v "shared/pids/puma.state" | egrep -v "^(\?\?\spublic/assets)" | egrep -v "##" | cut -c4- | egrep -v "commit_exception\.list|\.xls|\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.ruby\-version|db/patch|bundles|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
 FILES="${FILES1}
 ${FILES2}"
 
@@ -499,7 +499,7 @@ find_rake_lib_and_add_it_to_temp_keys() {
     echo "      RAKE_EXECUTABLE : $RAKE_EXECUTABLE"
     if [ -f .temp_keys ] ; then
     {
-      if ! echo .temp_keys | grep "export RAKE_EXECUTABLE" ; then 
+      if ! echo .temp_keys | grep "export RAKE_EXECUTABLE" ; then
       {
         local temp=$(escape_double_quotes <<< "${RAKE_EXECUTABLE}")
         echo -e "\n"  >> .temp_keys
@@ -548,7 +548,7 @@ loader_file_exists() {
   local testing=$(echo "${RAKE_EXECUTABLE}" | remove_double_quotes | sed 's/ /\n/g' | grep -e "_loader.rb$" )
   (( DEBUG )) && echo "${RAKE_EXECUTABLE}"
   (( DEBUG )) && echo "echo \"${RAKE_EXECUTABLE}\" | remove_double_quotes"
-  (( DEBUG )) && echo "${RAKE_EXECUTABLE}" | remove_double_quotes 
+  (( DEBUG )) && echo "${RAKE_EXECUTABLE}" | remove_double_quotes
   (( DEBUG )) && echo "echo \"${RAKE_EXECUTABLE}\" | remove_double_quotes | sed 's/ /\n/g'"
   (( DEBUG )) && echo "${RAKE_EXECUTABLE}" | remove_double_quotes | sed 's/ /\n/g'
   (( DEBUG )) && echo "echo \"${RAKE_EXECUTABLE}\" | remove_double_quotes | sed 's/ /\n/g' | grep -e \"_loader.rb$\""
