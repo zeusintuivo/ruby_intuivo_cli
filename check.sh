@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # @author Zeus Intuivo <zeus@intuivo.com>
 #
@@ -18,7 +18,54 @@
 [[ -z "${YELLOW226}" ]] && YELLOW226="\\033[38;5;226m"
 [[ -z "${YELLOW}" ]] && YELLOW="\\033[01;33m"
 
-checkportmongo(){
+load_temp_keys() {
+          export GOOGLE_API_KEY="x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1xx1x1"
+          export GOOGLE_CLIENT_ID="012345678900-gmk2gmk2gmk2gmk2gmk2gmk2gmk2gmk2.apps.googleusercontent.com"
+          export GOOGLE_CLIENT_SECRET="QuerbyQuerbyErgoIpsonHop"
+          export GOOGLE_EMAIL_DOMAIN="weise.box"
+          local _temp_keys="empty"
+
+          ! [ -f .temp_keys ] && echo -e "${RED} ERROR - .temp_keys file must exist. Use create_temp_keys script. Or touch .temp_keys" && exit 1
+          [ -f .temp_keys ] && _temp_keys=$(<.temp_keys)
+          . .temp_keys
+          [[ "${_temp_keys}" == "empty" ]] && echo -e "${RED} ERROR - .temp_keys file must exist. Use create_temp_keys script. Or touch .temp_keys and must not be empty." && exit 1
+          echo -e "${PURPLE_BLUE}  + TEMP KEYS NEED IT FOR: test/integration/inquiry_plugin_integration_test.rb"
+          echo -e "${PURPLE_BLUE}  + "
+          echo -e "${PURPLE_BLUE}  + PWD.                :${GRAY241}$(pwd)"
+          echo -e "${PURPLE_BLUE}  + GOOGLE_API_KEY      :${GRAY241}${GOOGLE_API_KEY}"
+          echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_ID    :${GRAY241}${GOOGLE_CLIENT_ID}"
+          echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_SECRET:${GRAY241}${GOOGLE_CLIENT_SECRET}"
+          echo -e "${PURPLE_BLUE}  + GOOGLE_EMAIL_DOMAIN :${GRAY241}${GOOGLE_EMAIL_DOMAIN}"
+          echo -e "${PURPLE_BLUE}  + KEYS_NEEDED.        :${GRAY241}${KEYS_NEEDED}"
+          echo -e "${PURPLE_BLUE}  + CHECK_REQUIREMENTS  :${GRAY241}${CHECK_REQUIREMENTS}"
+          echo -e "${PURPLE_BLUE}  + "
+          [[ -z "${KEYS_NEEDED}" ]] && echo -e "${RED} ERROR - KEYS_NEEDED must be defined inside .temp_keys . Sample export KEYS_NEEDED=\"CHECK_REQUIREMENTS\"" && exit 1
+          [[ -z "${CHECK_REQUIREMENTS}" ]] && echo -e "${RED} ERROR - CHECK_REQUIREMENTS must be defined inside .temp_keys . Sample export CHECK_REQUIREMENTS=\"mongo\npostgresql\"" && exit 1
+          return 0
+} # end load_temp_keys
+load_temp_keys
+
+checkportsudo(){
+    local port="${1}"
+    local service="${2}"
+    echo "Require sudo to explore more on ports:"
+    local response=$(sudo lsof -n -i:"${port}" | grep LISTEN 2>&1) # whats_listening
+    if [[ -n "${response}" ]] && [[ "${response}" == *"${service}"* ]] ; then
+    {
+      echo -e "${GREEN} PORT ${port} -- The ${service} port seems responding "
+    }
+    else
+    {
+      echo -e "${RED} ERROR ${service} NOT RUNING ON PORT ${port}.      Check is install and running on that port   "
+      exit 1
+    }
+    fi
+
+}
+
+checkport(){
+  local port="${1}"
+  local service="${2}"
 # exec 6<>/dev/tcp/ip.addr.of.server/27017
 # echo -e "GET / HTTP/1.0\n" >&6
 # cat <&6
@@ -29,16 +76,65 @@ checkportmongo(){
 # netstat -lnt | awk '$6 == "LISTEN" && $4 ~ /\.27017$/'
 # mac
 # netstat -ant tcp | awk '$6 == "LISTEN" && $4 ~ /\.27017$/'
+if [[ "$(uname)" == "Darwin" ]] ; then
+{
+  echo "# mac netstat"
+  if ! (netstat -ant tcp | awk '$6 == "LISTEN" && $4 ~ /\.'${port}'$/' >/dev/null 2>&1 ); then
+    echo -e "${GREEN} PORT ${port} -- The ${service} port seems responding "
+  else
+    checkportsudo ${port} ${service}
+  fi
+}
+else
+{
+  echo "# linux netstat"
+  if ! (netstat -lnt | awk '$6 == "LISTEN" && $4 ~ /\.'${port}'$/' >/dev/null 2>&1 ); then
+    echo -e "${GREEN} PORT ${port} -- The ${service} port seems responding "
+  else
+    checkportsudo ${port} ${service}
+  fi
+}
+fi
 
-if netstat -ant tcp | awk '$6 == "LISTEN" && $4 ~ /\.27017$/' >/dev/null 2>&1; then
-  # msg_red "ERROR MONGO NOT RUNING ON PORT 27017.      Check is install and running on that port   "
+
+} # end checkportmongo
+
+
+checkportmongo(){
+if ! (netstat -ant tcp | awk '$6 == "LISTEN" && $4 ~ /\.27017$/' >/dev/null 2>&1 ); then
   echo "PORT 27017 -- The mongo port seems responding "
 else
-  echo "ERROR MONGO NOT RUNING ON PORT 27017.      Check is install and running on that port   "
+  # msg_red "ERROR MONGO NOT RUNING ON PORT 27017.      Check is install and running on that port   "
+  echo -e "${RED} ERROR MONGO NOT RUNING ON PORT 27017.      Check is install and running on that port   "
   exit 1
 fi
-}
-checkportmongo
+} # end checkportmongo
+
+checkportpostgresql(){
+checkport 5432 postgresql
+} # end checkportpostgresql
+
+
+check_requirements(){
+  local requirement requirements=$(grep -vE '^\s+#'<<<"${@}")
+  for requirement in ${requirements} ; do
+  {
+    [[ -z "${requirement}" ]] && continue
+    echo -e "Checking "${requirement}" "
+    case "${requirement}" in
+      'mongo' )
+        checkportmongo
+        ;;
+      'postgresql'  )
+        checkportpostgresql
+        ;;
+    esac
+  }
+  done
+} # end check_requirements
+
+check_requirements "${CHECK_REQUIREMENTS}"
+
 
 
 
@@ -70,9 +166,25 @@ check_replacer () {
     return;
   fi
 }
+
+msg_red () {
+    echo -e "${RED} $@"
+}
+
+msg_green () {
+    echo -e "${GREEN} $@"
+}
+
 msg_install () {
   msg_red "${GREEN} ${RED} CANNOT REPLACE ...${1} IS MISSING ";
-  msg_red " NEED TO INSTALL ${1}.       Linux:    sudo apt-get install ${1} / sudo dnf install ${1}          Mac:     brew install ${1}   "
+  msg_red " NEED TO INSTALL ${1}. "
+  echo -e "${YELLOW220}
+        Linux:   debian  sudo apt-get install ${1}
+                 redhat  sudo dnf install ${1}
+          Mac:   brew install gnu-${1}
+
+          ${2}
+           "
 }
 # REPLACER="sed";
 # Try vim's ex
@@ -87,31 +199,31 @@ if [[ $VALIDREPLACER == "error" ]] ; then
    rm /tmp/ersetze_test_${REPLACER}.txt
 fi
 
-if [[ $VALIDREPLACER == "install" ]] ; then
-  msg_install "${REPLACER}"
-fi
+# if [[ $VALIDREPLACER == "install" ]] ; then
+#   msg_install "${REPLACER}"
+# fi
 rm /tmp/ersetze_test_${REPLACER}.txt
 
 # TODO - Remove Repetition HERE
 # ? empty still
-if [[ $VALIDREPLACER == "install" || $VALIDREPLACER == "error"  ]] ; then
-  REPLACER="sed";
-  VALIDREPLACER=$(check_replacer "${REPLACER}")
+# if [[ $VALIDREPLACER == "install" || $VALIDREPLACER == "error"  ]] ; then
+#   REPLACER="sed";
+#   VALIDREPLACER=$(check_replacer "${REPLACER}")
 
-  if [[ $VALIDREPLACER == "error" ]] ; then
-    msg_red "Error with replacer ${REPLACER}"
-    msg_red " - Error:"
-    cat /tmp/ersetze_test_${REPLACER}.txt
-     rm /tmp/ersetze_test_${REPLACER}.txt
-    exit 1;
-  fi
+#   if [[ $VALIDREPLACER == "error" ]] ; then
+#     msg_red "Error with replacer ${REPLACER}"
+#     msg_red " - Error:"
+#     cat /tmp/ersetze_test_${REPLACER}.txt
+#      rm /tmp/ersetze_test_${REPLACER}.txt
+#     exit 1;
+#   fi
 
-  if [[ $VALIDREPLACER == "install" ]] ; then
-    msg_install "${REPLACER}"
-    rm /tmp/ersetze_test_${REPLACER}.txt
-    exit 1;
-  fi
-fi
+#   if [[ $VALIDREPLACER == "install" ]] ; then
+#     msg_install "${REPLACER}"
+#     rm /tmp/ersetze_test_${REPLACER}.txt
+#     exit 1;
+#   fi
+# fi
 
 
 
@@ -132,19 +244,19 @@ fi
 #
 # C H E C K   R E P L A C E   F U N C T I O N S   I N S T A L L E D  -- End
 
-if [[ $REPLACERGNU == "NO" ]] ; then
-  msg_install "This script only works well with Gnu SED
-                On MAC
-                brew install gsed
-                which gsed
-                /usr/local/bin/gsed
-                /usr/bin/sed
-                sudo mv /usr/bin/sed /usr/bin/sed_old
-                cd /usr/bin
-                sudo ln -s /usr/local/bin/gsed sed
-                "
-  exit 1;
-fi
+# if [[ $REPLACERGNU == "NO" ]] ; then
+#   msg_install "sed" "This script only works well with Gnu SED
+#        On MAC:
+#                 brew install gnu-sed
+#                 which gsed
+#                 /usr/local/bin/gsed
+#                 /usr/bin/sed
+#                 sudo mv /usr/bin/sed /usr/bin/sed_old
+#                 cd /usr/bin
+#                 sudo ln -s /usr/local/bin/gsed sed
+#                 "
+#   exit 1;
+# fi
 
 if [ ! -d .git ] ; then
 {
@@ -255,14 +367,14 @@ echo
 echo -e "${PURPLE_BLUE} === Branch ${CYAN} ${BRANCH} ${PURPLE_BLUE} === ${GRAY241} ";
 echo
 echo " "
-echo -e "${CYAN} Rubocop only files from this branch"
+echo -e "${YELLOW220} STAGE 1: ${CYAN} Rubocop only files from this branch"
 echo -e "${PURPLE_BLUE}+-+"
 echo -e "  +"
 echo -e "  +-- ${CYAN} Locating files that changes in this branch "
 echo -e "${PURPLE_BLUE}  +${GRAY241}"
 
 FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
-FILES2=$(git status -sb | egrep -v "^(\sD)" | egrep -v "shared/pids/puma.state" | egrep -v "^(\?\?\spublic/assets)" | egrep -v "##" | cut -c4- | egrep -v "commit_exception\.list|\.xls|\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.ruby\-version|db/patch|bundles|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
+FILES2=$(git status -sb | egrep -v "^(\sD)" | egrep -v "shared/pids/puma.state" | egrep -v "^(\?\?\spublic/assets)" | egrep -v "##" | cut -c4- | egrep -v "commit_exception\.list|\.xls|\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.ruby\-version|db/patch|bundles|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.bash|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
 FILES="${FILES1}
 ${FILES2}"
 
@@ -283,7 +395,7 @@ else
   FILE_LEN=0
   while read -r ONE_FILE; do
   {
-    if [ ! -z "${ONE_FILE}" ] ; then
+    if [ -n "${ONE_FILE}" ] ; then
     {
       FILE_LEN="${#ONE_FILE}"
       if (( $FILE_LEN > $FILE_LONGEST )) ; then
@@ -325,7 +437,7 @@ else
 
   while read -r ONE_FILE; do
   {
-    if [ ! -z "${ONE_FILE}" ] ; then
+    if [ -n "${ONE_FILE}" ] ; then
     {
       FILERS=$(add_ssspaceSSS_to_name "${ONE_FILE}" $FILE_LONGEST)
       ALL_FILERS="${ALL_FILERS}
@@ -337,7 +449,7 @@ ${FILERS}"
   done <<< "${FILES}"
   while read -r ONE_FILE; do
   {
-    if [ ! -z "${ONE_FILE}" ] ; then
+    if [ -n "${ONE_FILE}" ] ; then
     {
       echo -e "  ${PURPLE_BLUE}+${CYAN} ${ONE_FILE} ${PURPLE_BLUE}+" | sed 's@§@ @g'
     }
@@ -348,10 +460,33 @@ ${FILERS}"
   echo -e "~~+${SPACER}+~~${GRAY241}"
   for ONE_FILE in ${FILES}; do
   {
-    if [ ! -z "${ONE_FILE}" ] ; then
+    if [ -n "${ONE_FILE}" ] ; then
     {
-      RUBORESULT=$(bundle exec rubocop -a "${ONE_FILE}")
-      if [ ! -z "${RUBORESULT}" ] && [[ "${RUBORESULT}" != *"no offenses detected"* ]]; then
+      echo "bundle exec rubocop -a ${ONE_FILE}"
+      RUBORESULT="$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)"
+      local _err=$?
+      if [ ${_err} -gt 0 ] ; then
+      {
+        if [ -n "${RUBORESULT}" ] && [[ "${RUBORESULT}" != *"could not find"* ]]; then
+        {
+          echo -e "  ${RED}+${YELLOW220} ${RUBORESULT} ${RED}+ FAILED first attempt to run rubocop ... Attempting to bundle"
+          BUNDLING="$(bundle  2>&1)"
+          _err=$?
+          if [ ${_err} -gt 0 ] ; then
+          {
+            echo -e "  ${RED}+${YELLOW220} ${BUNDLING} ${RED}+ FAILED attempt to run bundle"
+            echo -e "  ${RED}+${YELLOW220}---${RESET} Fix bundle then try again "
+            exit 1
+          }
+          fi
+          echo "bundle exec rubocop -a ${ONE_FILE}"
+          RUBORESULT=$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)
+        }
+        fi
+      }
+      fi
+
+      if [ -n "${RUBORESULT}" ] && [[ "${RUBORESULT}" != *"no offenses detected"* ]]; then
       {
         FILERS=$(add_ssspaceSSS_to_name "${ONE_FILE}" $FILE_LONGEST)
         echo -e "  ${RED}+${YELLOW220} ${FILERS} ${RED}+ FAILED" | sed 's@§@ @g'
@@ -366,6 +501,7 @@ ${FILERS}"
     fi
   }
   done
+
   #echo "${FILES}" | sort -n | uniq | xargs bundle exec rubocop -a
   if (( $? != 0 )) ;  then
   {
@@ -400,7 +536,7 @@ find_location_rake_lib() {
   local ruby_version=$(ruby --version | extract_version)
   command -v updatedb >/dev/null 2>&1  && sudo -u root -i --  sudo updatedb
   # THIS_RUBY_VERSION=$(ruby --version  | cut -d' ' -f2 | cut -d'p' -f1)
-
+echo hello && exit 0
   # Then get folder based on ruby version 2.2.5 and rake version 10.5.0 used for development
   local rake_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "ruby-${ruby_version}" | grep "rake-${rake_version}" | head -1 )  # RVM Type environment
   [ -z "${rake_lib_folder}" ] && rake_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "${ruby_version}" | head -1 )         # Other  Install Type environment macthing ruby and gem version
@@ -433,25 +569,6 @@ find_location_rake_lib() {
   echo "${rake_lib_folder}"
 } # end find_location_rake_lib
 
-load_temp_keys() {
-          export GOOGLE_API_KEY="x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1xx1x1"
-          export GOOGLE_CLIENT_ID="012345678900-gmk2gmk2gmk2gmk2gmk2gmk2gmk2gmk2.apps.googleusercontent.com"
-          export GOOGLE_CLIENT_SECRET="QuerbyQuerbyErgoIpsonHop"
-          export GOOGLE_EMAIL_DOMAIN="weise.box"
-
-          LOAD_TEMP_KEYS="# Empty script"
-          [ -f .temp_keys ] && LOAD_TEMP_KEYS=$(<.temp_keys)
-          eval "${LOAD_TEMP_KEYS}"
-
-          echo -e "${PURPLE_BLUE}  + TEMP KEYS NEED IT FOR: test/integration/inquiry_plugin_integration_test.rb"
-          echo -e "${PURPLE_BLUE}  + "
-          echo -e "${PURPLE_BLUE}  + GOOGLE_API_KEY      :${GRAY241}${GOOGLE_API_KEY}"
-          echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_ID    :${GRAY241}${GOOGLE_CLIENT_ID}"
-          echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_SECRET:${GRAY241}${GOOGLE_CLIENT_SECRET}"
-          echo -e "${PURPLE_BLUE}  + GOOGLE_EMAIL_DOMAIN :${GRAY241}${GOOGLE_EMAIL_DOMAIN}"
-          echo -e "${PURPLE_BLUE}  + "
-}
-load_temp_keys
 
 rake_lib_folder() {
               LOCATION_RAKE_LIB=$(find_location_rake_lib)
@@ -518,7 +635,7 @@ kill_execution() {
 
 failed() {
     ARGS="${@}"
-    if [[ ! -z "${ARGS-x}" ]] ; then # if its set and not empty
+    if [[ -n "${ARGS-x}" ]] ; then # if its set and not empty
     {
       echo -e "${RED} 𝞦 ${LIGHTYELLOW} ${ARGS} ${RED} has failed!  ${RESET}"
       kill_execution
@@ -590,8 +707,14 @@ obtain_rake_executable() {
   fi
 } # end obtain_rake_executable
 
+echo " "
+echo -e "${YELLOW220} STAGE 2: ${CYAN} Find Rake File... which runs tests"
+echo -e "${PURPLE_BLUE}+-+"
+echo -e "  +"
+
 echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
 obtain_rake_executable
+echo hola && exit 0
 
 if [ -z "${1}" ] ; then
 {
@@ -653,7 +776,7 @@ ${ALL_SPECSRB}"
   INTEGRATION_TEST_FILES_NOT_FOUND=""
   while read -r ONE_FILE; do
   {
-    if [ ! -z "${ONE_FILE}" ] ; then
+    if [ -n "${ONE_FILE}" ] ; then
     {
       if [ -f "${ONE_FILE}" ] ; then
       {
@@ -669,7 +792,7 @@ ${ALL_SPECSRB}"
         fi
 
         #phantomjs is required
-        if [[ ! -z $(cat "${ONE_FILE}" | grep "visit") ]] ; then
+        if [[ -n $(cat "${ONE_FILE}" | grep "visit") ]] ; then
         {
           PHANTOM_IS_REQUIRED=1
           PHANTOM_IS_REQUIRED_BY="${PHANTOM_IS_REQUIRED_BY}
@@ -710,7 +833,7 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
     exit 130;
   }
   fi
-  if [[ ! -z "${INTEGRATION_TEST_FILES_NOT_FOUND}" ]] ; then
+  if [[ -n "${INTEGRATION_TEST_FILES_NOT_FOUND}" ]] ; then
   {
     echo -e "${PURPLE_BLUE}  + "
     echo -e "${PURPLE_BLUE}  + ${YELLOW220} WARNING  ${PURPLE_BLUE}THE FOLLOWING INTEGRATION TEST FILES WHERE NOT FOUND AND were ${YELLOW220}ignored  ${PURPLE_BLUE}from your list"
@@ -756,7 +879,7 @@ trap interrupt_cucumbers INT
   CUCUMBER_TEST_FILES_NOT_FOUND=""
   while read -r ONE_FILE; do
   {
-    if [ ! -z "${ONE_FILE}" ] ; then
+    if [ -n "${ONE_FILE}" ] ; then
     {
       if [ -f "${ONE_FILE}" ] ; then
       {
@@ -783,7 +906,7 @@ ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
   }
   done <<< "${ALL_CUCUMBER_TESTS}"
 
-  if [[ ! -z "${CUCUMBER_TEST_FILES_NOT_FOUND}" ]] ; then
+  if [[ -n "${CUCUMBER_TEST_FILES_NOT_FOUND}" ]] ; then
   {
     echo -e "${PURPLE_BLUE}  + "
     echo -e "${PURPLE_BLUE}  + ${YELLOW220} WARNING  ${PURPLE_BLUE}THE FOLLOWING CUCUMBER TEST FILES WHERE NOT FOUND AND were ${YELLOW220}ignored  ${PURPLE_BLUE}from your list"
@@ -794,7 +917,7 @@ ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
   }
   fi
 
-  if [[ ! -z "${CUCUMBER_TESTS_EXISTS}" ]] ; then
+  if [[ -n "${CUCUMBER_TESTS_EXISTS}" ]] ; then
   {
     echo -e "${PURPLE_BLUE}  + "
     echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} CUCUMBER"
@@ -835,7 +958,7 @@ trap interrupt_integrations INT
   local ALL_SPECSRB=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_spec\.rb"| sort | uniq)
   INTEGRATION_TESTS_EXISTS="${ALL_TESTSRB}
 ${ALL_SPECSRB}"
-  if [[ ! -z "${INTEGRATION_TESTS_EXISTS}" ]] ; then
+  if [[ -n "${INTEGRATION_TESTS_EXISTS}" ]] ; then
   {
       ##### REAPEAT START
       echo -e "${PURPLE_BLUE}  + "
@@ -869,7 +992,7 @@ given_cucumbers_testing() {
 trap interrupt_cucumbers INT
 
   CUCUMBER_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "\.feature" | sort | uniq)
-  if [[ ! -z "${CUCUMBER_TESTS_EXISTS}" ]] ; then
+  if [[ -n "${CUCUMBER_TESTS_EXISTS}" ]] ; then
   {
       echo -e "${PURPLE_BLUE}  + "
       echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} CUCUMBER"
