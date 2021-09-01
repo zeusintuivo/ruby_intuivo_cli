@@ -3,6 +3,17 @@
 # @author Zeus Intuivo <zeus@intuivo.com>
 #
 #
+    load_struct_testing_wget() {
+        local provider="$HOME/_/clis/execute_command_intuivo_cli/struct_testing"
+        [   -e "${provider}"  ] && source "${provider}" && echo "Loading Struct Testing locally"
+        command -v passed >/dev/null 2>&1 && echo "                              \.. loading succeeded " && return 0
+        ( [ ! -e "${provider}"  ] || ( ! command -v passed >/dev/null 2>&1 ) ) && echo "Loading Struct Testing from the net " && eval """$(wget --quiet --no-check-certificate  https://raw.githubusercontent.com/zeusintuivo/execute_command_intuivo_cli/master/struct_testing -O -  2>/dev/null )"""   # suppress only wget download messages, but keep wget output for variable
+        ( ( ! command -v passed >/dev/null 2>&1 ) && echo -e "\n \n  ERROR! Loading struct_testing \n \n " && return 1 )
+        return 0
+    }
+    # end load_struct_testing_wget
+    load_struct_testing_wget
+
 #colors
 [[ -z "${BLACK}" ]] && BLACK="\\033[38;5;16m"
 [[ -z "${BRIGHT_BLUE87}" ]] && BRIGHT_BLUE87="\\033[38;5;87m"
@@ -19,12 +30,11 @@
 [[ -z "${YELLOW}" ]] && YELLOW="\\033[01;33m"
 
 load_temp_keys() {
-          export GOOGLE_API_KEY="x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1xx1x1"
-          export GOOGLE_CLIENT_ID="012345678900-gmk2gmk2gmk2gmk2gmk2gmk2gmk2gmk2.apps.googleusercontent.com"
-          export GOOGLE_CLIENT_SECRET="QuerbyQuerbyErgoIpsonHop"
-          export GOOGLE_EMAIL_DOMAIN="weise.box"
+     export GOOGLE_API_KEY="x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1xx1x1"
+     export GOOGLE_CLIENT_ID="012345678900-gmk2gmk2gmk2gmk2gmk2gmk2gmk2gmk2.apps.googleusercontent.com"
+     export GOOGLE_CLIENT_SECRET="QuerbyQuerbyErgoIpsonHop"
+     export GOOGLE_EMAIL_DOMAIN="weise.box"
           local _temp_keys="empty"
-
           ! [ -f .temp_keys ] && echo -e "${RED} ERROR - .temp_keys file must exist. Use create_temp_keys script. Or touch .temp_keys" && exit 1
           [ -f .temp_keys ] && _temp_keys=$(<.temp_keys)
           . .temp_keys
@@ -32,18 +42,49 @@ load_temp_keys() {
           echo -e "${PURPLE_BLUE}  + TEMP KEYS NEED IT FOR: test/integration/inquiry_plugin_integration_test.rb"
           echo -e "${PURPLE_BLUE}  + "
           echo -e "${PURPLE_BLUE}  + PWD.                :${GRAY241}$(pwd)"
-          echo -e "${PURPLE_BLUE}  + GOOGLE_API_KEY      :${GRAY241}${GOOGLE_API_KEY}"
-          echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_ID    :${GRAY241}${GOOGLE_CLIENT_ID}"
-          echo -e "${PURPLE_BLUE}  + GOOGLE_CLIENT_SECRET:${GRAY241}${GOOGLE_CLIENT_SECRET}"
-          echo -e "${PURPLE_BLUE}  + GOOGLE_EMAIL_DOMAIN :${GRAY241}${GOOGLE_EMAIL_DOMAIN}"
+          [[ -z "${KEYS_NEEDED}" ]] && echo -e "${RED} ERROR - KEYS_NEEDED must be defined inside .temp_keys . Sample export KEYS_NEEDED=\"CHECK_REQUIREMENTS\""
+          [[ -z "${CHECK_REQUIREMENTS}" ]] && echo -e "${RED} ERROR - CHECK_REQUIREMENTS must be defined inside .temp_keys . Sample export CHECK_REQUIREMENTS=\"mongo\npostgresql\""
+          enforce_variable_with_value KEYS_NEEDED "${KEYS_NEEDED}"
+          enforce_variable_with_value CHECK_REQUIREMENTS "${CHECK_REQUIREMENTS}"
           echo -e "${PURPLE_BLUE}  + KEYS_NEEDED.        :${GRAY241}${KEYS_NEEDED}"
           echo -e "${PURPLE_BLUE}  + CHECK_REQUIREMENTS  :${GRAY241}${CHECK_REQUIREMENTS}"
           echo -e "${PURPLE_BLUE}  + "
-          [[ -z "${KEYS_NEEDED}" ]] && echo -e "${RED} ERROR - KEYS_NEEDED must be defined inside .temp_keys . Sample export KEYS_NEEDED=\"CHECK_REQUIREMENTS\"" && exit 1
-          [[ -z "${CHECK_REQUIREMENTS}" ]] && echo -e "${RED} ERROR - CHECK_REQUIREMENTS must be defined inside .temp_keys . Sample export CHECK_REQUIREMENTS=\"mongo\npostgresql\"" && exit 1
           return 0
 } # end load_temp_keys
 load_temp_keys
+
+load_temp_env() {
+          local _env="empty"
+          ! [ -f .env ] && echo -e "${RED} ERROR - .env file must exist. Use create_env script. Or touch .env" && exit 1
+          [ -f .env ] && _env=$(<.env)
+          . .env
+          [[ "${_env}" == "empty" ]] && echo -e "${RED} ERROR - .env file must exist. Use create_env script. Or touch .env and must not be empty." && exit 1
+          echo -e "${PURPLE_BLUE}  + .env NEED IT FOR: entire project"
+          echo -e "${PURPLE_BLUE}  + "
+          echo -e "${PURPLE_BLUE}  + PWD.                :${GRAY241}$(pwd)"
+          echo -e "${PURPLE_BLUE}  + "
+          return 0
+} # end load_temp_env
+load_temp_env
+
+
+check_keys_needed() {
+  local name value requirement requirements="$(grep -vE '^\s+#|^#'<<<"${KEYS_NEEDED}")"
+  for requirement in ${requirements} ; do
+  {
+    [[ -z "${requirement}" ]] && continue
+    name="\$${requirement}"
+    (( DEBUG )) && echo -e "${YELLOW220}  + name of variable  tested :${GRAY241} ${name}"
+    value="$(eval "echo "${name}"")"
+    (( DEBUG )) && echo -e "${YELLOW220}  + value of variable tested :${GRAY241} ${value}"
+    echo -e "${PURPLE_BLUE}  + ${requirement}  :${GRAY241}${value}"
+    [[ -z "${value}" ]] && echo -e "${RED} ERROR - key needed :${requirement}: must be defined inside .temp_keys or .env . Sample \nexport ${requirement}=\"some_value\""
+    enforce_variable_with_value ${requirement} "${value}"
+  }
+  done
+  return 0
+} # end check_keys_needed
+check_keys_needed
 
 checkportsudo(){
     local port="${1}"
@@ -116,7 +157,7 @@ checkport 5432 postgresql
 
 
 check_requirements(){
-  local requirement requirements=$(grep -vE '^\s+#'<<<"${@}")
+  local requirement requirements="$(grep -vE '^\s+#|^#'<<<"${@}")"
   for requirement in ${requirements} ; do
   {
     [[ -z "${requirement}" ]] && continue
@@ -460,43 +501,41 @@ ${FILERS}"
   echo -e "~~+${SPACER}+~~${GRAY241}"
   for ONE_FILE in ${FILES}; do
   {
-    if [ -n "${ONE_FILE}" ] ; then
+    [ -z "${ONE_FILE}" ] && continue
+    [ -e "${ONE_FILE}" ] || continue
+    echo "bundle exec rubocop -a ${ONE_FILE}"
+    RUBORESULT="$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)"
+    local _err=$?
+    if [ ${_err} -gt 0 ] ; then
     {
-      echo "bundle exec rubocop -a ${ONE_FILE}"
-      RUBORESULT="$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)"
-      local _err=$?
-      if [ ${_err} -gt 0 ] ; then
+      if [ -n "${RUBORESULT}" ] && [[ "${RUBORESULT}" != *"could not find"* ]]; then
       {
-        if [ -n "${RUBORESULT}" ] && [[ "${RUBORESULT}" != *"could not find"* ]]; then
+        echo -e "  ${RED}+${YELLOW220} ${RUBORESULT} ${RED}+ FAILED first attempt to run rubocop ... Attempting to bundle"
+        BUNDLING="$(bundle  2>&1)"
+        _err=$?
+        if [ ${_err} -gt 0 ] ; then
         {
-          echo -e "  ${RED}+${YELLOW220} ${RUBORESULT} ${RED}+ FAILED first attempt to run rubocop ... Attempting to bundle"
-          BUNDLING="$(bundle  2>&1)"
-          _err=$?
-          if [ ${_err} -gt 0 ] ; then
-          {
-            echo -e "  ${RED}+${YELLOW220} ${BUNDLING} ${RED}+ FAILED attempt to run bundle"
-            echo -e "  ${RED}+${YELLOW220}---${RESET} Fix bundle then try again "
-            exit 1
-          }
-          fi
-          echo "bundle exec rubocop -a ${ONE_FILE}"
-          RUBORESULT=$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)
+          echo -e "  ${RED}+${YELLOW220} ${BUNDLING} ${RED}+ FAILED attempt to run bundle"
+          echo -e "  ${RED}+${YELLOW220}---${RESET} Fix bundle then try again "
+          exit 1
         }
         fi
+        echo "bundle exec rubocop -a ${ONE_FILE}"
+        RUBORESULT=$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)
       }
       fi
+    }
+    fi
 
-      if [ -n "${RUBORESULT}" ] && [[ "${RUBORESULT}" != *"no offenses detected"* ]]; then
+    if [ -n "${RUBORESULT}" ] && [[ "${RUBORESULT}" != *"no offenses detected"* ]]; then
+    {
+      FILERS=$(add_ssspaceSSS_to_name "${ONE_FILE}" $FILE_LONGEST)
+      echo -e "  ${RED}+${YELLOW220} ${FILERS} ${RED}+ FAILED" | sed 's@§@ @g'
+      while read -r  RUBORESULT_LINE; do
       {
-        FILERS=$(add_ssspaceSSS_to_name "${ONE_FILE}" $FILE_LONGEST)
-        echo -e "  ${RED}+${YELLOW220} ${FILERS} ${RED}+ FAILED" | sed 's@§@ @g'
-        while read -r  RUBORESULT_LINE; do
-        {
-          echo -e "  ${RED}+${YELLOW220}---${RESET} ${RUBORESULT_LINE}  "
-        }
-        done <<< "${RUBORESULT}"
+        echo -e "  ${RED}+${YELLOW220}---${RESET} ${RUBORESULT_LINE}  "
       }
-      fi
+      done <<< "${RUBORESULT}"
     }
     fi
   }
@@ -530,18 +569,48 @@ extract_version(){
 }
 
 find_location_rake_lib() {
+  (( DEBUG )) && echo -e "${YELLOW226}  find_location_rake_lib => ${CYAN} "
   local rake_version=$(rake --version 2>&1 | extract_version) # Check and catch capture all stout sdout output, error will return none 0 to $?)
+  (( DEBUG )) && echo -e "${YELLOW220} rake_version: ${CYAN} ${rake_version}"
   # ALTERNATIVE: local rake_version2=$(gem list rake | grep "^rake (*.*.*)" | extract_version) # Check and catch capture all stout sdout output, error will return none 0 to $?)
   local rake_location=$(which rake | sed 's/bin\/rake//g')
+  (( DEBUG )) && echo -e "${YELLOW220} rake_location: ${CYAN} ${rake_location}"
   local ruby_version=$(ruby --version | extract_version)
-  command -v updatedb >/dev/null 2>&1  && sudo -u root -i --  sudo updatedb
-  # THIS_RUBY_VERSION=$(ruby --version  | cut -d' ' -f2 | cut -d'p' -f1)
-echo hello && exit 0
-  # Then get folder based on ruby version 2.2.5 and rake version 10.5.0 used for development
-  local rake_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "ruby-${ruby_version}" | grep "rake-${rake_version}" | head -1 )  # RVM Type environment
-  [ -z "${rake_lib_folder}" ] && rake_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "${ruby_version}" | head -1 )         # Other  Install Type environment macthing ruby and gem version
-  [ -z "${rake_lib_folder}" ] && rake_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | head -1 )  # Ruby compiled installed with WGET, or GEM install folder is not matching to rake install, just get the first one
+  (( DEBUG )) && echo -e "${YELLOW220} ruby_version: ${CYAN} ${ruby_version}"
 
+
+  if command -v launchctl >/dev/null 2>&1  ; then
+  {
+    (( DEBUG )) &&  echo -e "${YELLOW220} launchctl: ${CYAN} mac "
+    if [[ ! -e /var/db/locate.database ]]  ; then
+    {
+      (( DEBUG )) &&  echo -e "${YELLOW220} launchctl: ${CYAN} /var/db/locate.database exists "
+    }
+    else
+    {
+      (( DEBUG )) &&  echo -e "${YELLOW220} launchctl: ${CYAN} /var/db/locate.database creating ..."
+      sudo -u root -i -- launchctl load -w /System/Library/LaunchDaemons/com.apple.locate.plist
+    }
+    fi
+  }
+  else
+  {
+    (( DEBUG )) &&  echo -e "${YELLOW220} updatedb: ${CYAN}  "
+    command -v updatedb >/dev/null 2>&1  && sudo -u root -i --  sudo updatedb
+    # THIS_RUBY_VERSION=$(ruby --version  | cut -d' ' -f2 | cut -d'p' -f1)
+    # Then get folder based on ruby version 2.2.5 and rake version 10.5.0 used for development
+    local rake_variable_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "ruby-${ruby_version}" | grep "rake-${rake_version}" | head -1 )  # RVM Type environment
+    echo -e "${YELLOW220} rake_variable_lib_folder: ${CYAN} ${rake_variable_lib_folder}"
+    [ -z "${rake_variable_lib_folder}" ] && rake_variable_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "${ruby_version}" | head -1 )         # Other  Install Type environment macthing ruby and gem version
+    [ -z "${rake_variable_lib_folder}" ] && rake_variable_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | head -1 )  # Ruby compiled installed with WGET, or GEM install folder is not matching to rake install, just get the first one
+  }
+  fi
+
+  local rake_variable_lib_folder="$(gem info rake | grep "${rake_version}" | grep "Installed" | cut -d: -f2 )"
+  (( DEBUG )) && echo -e "${PURPLE_BLUE}  + ${YELLOW220} rake_variable_lib_folder: ${rake_variable_lib_folder}"
+  rake_variable_lib_folder="${rake_variable_lib_folder}/gems/rake-${rake_version}/lib"
+  (( DEBUG )) && echo -e "${PURPLE_BLUE}  + ${YELLOW220} rake_variable_lib_folder: ${rake_variable_lib_folder}"
+  # rake_variable_lib_folder="${rake_variable_lib_folder}/gems/rake-${rake_version}/lib/rake/rake_test_loader.rb"
   #  if [ -d "${HOME}/.rvm/" ] ; then
   #  {
   #      local rake_folder=$(find "${HOME}"/.rvm/ -name "rake-${rake_version}")
@@ -565,14 +634,17 @@ echo hello && exit 0
   # #echo -e " ${GREEN} ruby_version${RED}:${CYAN}${ruby_version} "
   # echo -e " ${GREEN} rake_version${RED}:${CYAN}${rake_version} "
   # echo -e " ${GREEN} task_manager_location${RED}:${CYAN}${task_manager_location} "
-  # echo -e " ${GREEN} rake_lib_folder${RED}:${CYAN}${rake_lib_folder} "
-  echo "${rake_lib_folder}"
+  # echo -e " ${GREEN} rake_variable_lib_folder${RED}:${CYAN}${rake_variable_lib_folder} "
+  echo "${rake_variable_lib_folder}"
+
 } # end find_location_rake_lib
 
 
 rake_lib_folder() {
-              LOCATION_RAKE_LIB=$(find_location_rake_lib)
-              if [ -z "${LOCATION_RAKE_LIB}" ] ; then
+              (( DEBUG )) && echo -e "${YELLOW226}  rake_lib_folder => ${CYAN} "
+              LOCATION_RAKE_LIB="$(find_location_rake_lib | tail -1)"
+              (( DEBUG )) && echo -e "${PURPLE_BLUE}  + ${YELLOW220} LOCATION_RAKE_LIB: ${LOCATION_RAKE_LIB}"
+              if [[ -z "${LOCATION_RAKE_LIB}" ]] ; then
               {
                 echo -e "${PURPLE_BLUE}  + ${YELLOW220}WARNING COULD NOT FIND  test_loader.rb "
                 echo -e "${PURPLE_BLUE}  + ${CYAN}"
@@ -583,7 +655,7 @@ rake_lib_folder() {
                 echo -e "${PURPLE_BLUE}  + ${YELLOW220} Attempting to find test_loader.rb  again"
                 LOCATION_RAKE_LIB=$(find_location_rake_lib)
                 wait
-                if [ -z "${LOCATION_RAKE_LIB}" ] ; then
+                if [[ -z "${LOCATION_RAKE_LIB}" ]] ; then
                 {
                   echo -e "${PURPLE_BLUE}  + ${RED}DID NOT FIND test_loader.rb "
                   echo -e "${PURPLE_BLUE}  + ${CYAN}"
@@ -609,7 +681,11 @@ rake_lib_folder() {
 } # end rake_lib_folder
 
 find_rake_lib_and_add_it_to_temp_keys() {
+  (( DEBUG )) && echo -e "${YELLOW226}  find_rake_lib_and_add_it_to_temp_keys => ${CYAN} "
+
     rake_lib_folder
+
+    echo "              GLOBALS : ------"
     echo "    LOCATION_RAKE_LIB : $LOCATION_RAKE_LIB"
     echo "RAKELOADER_LIB_FOLDER : $RAKELOADER_LIB_FOLDER"
     echo "      RAKE_LIB_FOLDER : $RAKE_LIB_FOLDER"
@@ -688,14 +764,18 @@ lib_folder_and_loader_file_exist() {
 } # end lib_folder_and_loader_file_exist
 
 obtain_rake_executable() {
-  if [ -z "${RAKE_EXECUTABLE}" ] ; then
+  (( DEBUG )) && echo -e "${YELLOW226}  obtain_rake_executable => ${CYAN} "
+  (( DEBUG )) && echo -e "${YELLOW220}     RAKE_EXECUTABLE: ${CYAN} ${RAKE_EXECUTABLE}"
+  if [[ -z "${RAKE_EXECUTABLE}" ]] ; then
   {
+    (( DEBUG )) && echo -e "${YELLOW220}     RAKE_EXECUTABLE empty: ${CYAN} ${RAKE_EXECUTABLE}"
     find_rake_lib_and_add_it_to_temp_keys
     verify_rake_executable
   }
   else
   {
-    echo "      RAKE_EXECUTABLE : $RAKE_EXECUTABLE"
+    (( DEBUG )) && echo -e "${YELLOW220} RAKE_EXECUTABLE else empty: ${CYAN} ${RAKE_EXECUTABLE}"
+  exit 0
     if ! lib_folder_and_loader_file_exist ; then
     {
       echo -e "${PURPLE_BLUE}  + ${YELLOW220} Executable of Folder Lib, loader.rb From .temp_key Not executing correctly. Attempting to seek again "
@@ -713,6 +793,7 @@ echo -e "${PURPLE_BLUE}+-+"
 echo -e "  +"
 
 echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
+
 obtain_rake_executable
 echo hola && exit 0
 
