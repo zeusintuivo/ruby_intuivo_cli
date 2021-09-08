@@ -369,7 +369,7 @@ fi
 
 
 
-
+# IFS='\n' # hack for force breaks inside "while -r read" and "for in" loops
 
 
 add_ssspaceSSS_to_name(){
@@ -401,21 +401,9 @@ interrupt_cucumbers() {
     echo "${THISSCRIPTNAME} CUCUMBERS INTERRUPT"
 }
 
-rubocop_testing() {
-  local _err=$?
-  trap interrupt_rubocop INT
-  local BRANCH=$(git_current_branch)
-  echo " "
-  echo
-  echo -e "${PURPLE_BLUE} === Branch ${CYAN} ${BRANCH} ${PURPLE_BLUE} === ${GRAY241} ";
-  echo
-  echo " "
-  echo -e "${YELLOW220} STAGE 1: ${CYAN} Rubocop only files from this branch"
-  echo -e "${PURPLE_BLUE}+-+"
-  echo -e "  +"
-  echo -e "  +-- ${CYAN} Locating files that changes in this branch "
-  echo -e "${PURPLE_BLUE}  +${GRAY241}"
 
+find_files_from_this_branch_against_master(){
+  local BRANCH=$(git_current_branch)
   local FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
   local FILES2=$(git status -sb | egrep -v "^(\sD)" | egrep -v "shared/pids/puma.state" | egrep -v "^(\?\?\spublic/assets)" | egrep -v "##" | cut -c4- | egrep -v "commit_exception\.list|\.xls|\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.ruby\-version|db/patch|bundles|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.bash|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
   local ONE_FILE="" FILES="" FILESTMP=""
@@ -433,6 +421,25 @@ ${ONE_FILE}"
   }
   done <<< "${FILESTMP}"
   # // Only existing files - end
+  echo "${FILES}"
+  return 0
+}
+rubocop_testing() {
+  local _err=$?
+  trap interrupt_rubocop INT
+  local BRANCH=$(git_current_branch)
+  echo " "
+  echo
+  echo -e "${PURPLE_BLUE} === Branch ${CYAN} ${BRANCH} ${PURPLE_BLUE} === ${GRAY241} ";
+  echo
+  echo " "
+  echo -e "${YELLOW220} STAGE 1: ${CYAN} Rubocop only files from this branch"
+  echo -e "${PURPLE_BLUE}+-+"
+  echo -e "  +"
+  echo -e "  +-- ${CYAN} Locating files that changes in this branch "
+  echo -e "${PURPLE_BLUE}  +${GRAY241}"
+  local FILES="$(find_files_from_this_branch_against_master)"
+
 
   local -i NUMBER_LEN="${#FILES}"
 
@@ -491,19 +498,23 @@ ${ONE_FILE}"
 
     while read -r ONE_FILE; do
     {
-      if [ -n "${ONE_FILE}" ] ; then
+      if [[ -n "${ONE_FILE}" ]] ; then
       {
-        FILERS=$(add_ssspaceSSS_to_name "${ONE_FILE}" $FILE_LONGEST)
-        ALL_FILERS="${ALL_FILERS}
+        if [[ -e "${ONE_FILE}" ]] ; then
+        {
+          FILERS=$(add_ssspaceSSS_to_name "${ONE_FILE}" $FILE_LONGEST)
+          ALL_FILERS="${ALL_FILERS}
 ${FILERS}"
-        #echo -e "${PURPLE_BLUE}  + ${BRIGHT_BLUE87}${ONE_FILE} ${PURPLE_BLUE}  + "
+          #echo -e "${PURPLE_BLUE}  + ${BRIGHT_BLUE87}${ONE_FILE} ${PURPLE_BLUE}  + "
+        }
+        fi
       }
       fi
     }
     done <<< "${FILES}"
     while read -r ONE_FILE; do
     {
-      if [ -n "${ONE_FILE}" ] ; then
+      if [[ -n "${ONE_FILE}" ]] ; then
       {
         echo -e "  ${PURPLE_BLUE}+${CYAN} ${ONE_FILE} ${PURPLE_BLUE}+" | sed 's@§@ @g'
       }
@@ -859,7 +870,19 @@ echo -e "  +"
 
 echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
 # check_requirements "${CHECK_REQUIREMENTS}"
-if [[ -z "${1}" ]] ; then
+
+FILES="$(find_files_from_this_branch_against_master)"
+ if [[ -n "${1}" ]] ; then
+  {
+    FILES="${@}"
+  }
+  fi
+FILES="$(echo "${FILES}" | egrep "_test\.rb|_spec\.rb|\.feature")"
+
+DOALLTESTS='yes'
+[[ -n "${FILES}" ]] && DOALLTESTS='no'
+
+if [[ "${DOALLTESTS}" == 'yes' ]] ; then
 {
   echo " "
   echo -e "${YELLOW220} STAGE 4-A: ${CYAN} Testing all files hence ... no tests were passed to test"
@@ -932,12 +955,12 @@ ${ALL_SPECSRB}"
     INTEGRATION_TEST_FILES_NOT_FOUND=""
     while read -r ONE_FILE; do
     {
-      if [ -n "${ONE_FILE}" ] ; then
+      if [[ -n "${ONE_FILE}" ]] ; then
       {
-        if [ -f "${ONE_FILE}" ] ; then
+        if [[ -f "${ONE_FILE}" ]] ; then
         {
 
-          if [ -z "${INTEGRATION_TESTS_EXISTS}" ] ; then
+          if [[ -z "${INTEGRATION_TESTS_EXISTS}" ]] ; then
           {
             INTEGRATION_TESTS_EXISTS="\"${ONE_FILE}\""
           }
@@ -1111,8 +1134,9 @@ ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
 }
 else # -z ${1}
 {
+
   echo " "
-  echo -e "${YELLOW220} STAGE 4-B: ${CYAN} Testing only given files ${*}"
+  echo -e "${YELLOW220} STAGE 4-B: ${CYAN} Testing only given files " # ${FILES}
   echo -e "${PURPLE_BLUE}+-+"
   echo -e "  +"
 
@@ -1120,7 +1144,7 @@ else # -z ${1}
 
   given_integrations_testing() {
     echo " "
-    echo -e "${YELLOW220} STAGE 5-B: ${CYAN} Integration testing  only given files ${*}"
+    echo -e "${YELLOW220} STAGE 5-B: ${CYAN} Integration testing  only given files " # ${*}
     echo -e "${PURPLE_BLUE}+-+"
     echo -e "  +"
 
@@ -1146,17 +1170,43 @@ else # -z ${1}
 ${ALL_SPECSRB}"
     if [[ -n "${INTEGRATION_TESTS_EXISTS}" ]] ; then
     {
+      if [[ -n "${ALL_TESTSRB}" ]] ; then
+      {
         ##### REAPEAT START
         echo -e "${PURPLE_BLUE}  + "
         echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} INTEGRATION"
         echo -e "${PURPLE_BLUE}  + "
 
-        echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RED}"
+        echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
         echo -e "${PURPLE_BLUE}  + ${RESET}"
-        eval "bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${INTEGRATION_TESTS_EXISTS}
+        eval "bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
         #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
         echo -e "${PURPLE_BLUE}  + ${RESET}"
         echo -e "${PURPLE_BLUE}  + ${RESET}"
+      }
+      fi
+
+      if [[ -n "${ALL_SPECSRB}" ]] ; then
+      {
+        if command -v rspec >/dev/null 2>&1; then
+        {
+          ##### REAPEAT START
+          echo -e "${PURPLE_BLUE}  + "
+          echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} Rspec"
+          echo -e "${PURPLE_BLUE}  + "
+          # echo -e "${PURPLE_BLUE}  + ${CYAN}CI_RSPEC=true bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
+          echo -e "${PURPLE_BLUE}  + ${CYAN}CI_RSPEC${RED}=true ${CYAN}bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
+          # echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec rspec ${YELLOW220}${ALL_SPECSRB}${RED}"
+          echo -e "${PURPLE_BLUE}  + ${RESET}"
+          CI_RSPEC=true bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
+          # eval "bundle exec rspec" ${ALL_SPECSRB}
+          #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+          echo -e "${PURPLE_BLUE}  + ${RESET}"
+          echo -e "${PURPLE_BLUE}  + ${RESET}"
+        }
+        fi
+      }
+      fi
     }
     else
     {
@@ -1172,25 +1222,26 @@ ${ALL_SPECSRB}"
     fi
 
   } # end given_integrations_testing
-  given_integrations_testing "${@}"
+  given_integrations_testing "${FILES}"
 
   given_cucumbers_testing() {
     echo " "
-    echo -e "${YELLOW220} STAGE 6-B: ${CYAN} Cucumber testing  only given files ${*}"
+    CUCUMBER_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "\.feature" | sort | uniq)
+     [[ -z "${CUCUMBER_TESTS_EXISTS}" ]] && return 0
+    echo -e "${YELLOW220} STAGE 6-B: ${CYAN} Cucumber testing  only given files " # ${CUCUMBER_TESTS_EXISTS}
     echo -e "${PURPLE_BLUE}+-+"
     echo -e "  +"
 
     echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
     trap interrupt_cucumbers INT
 
-    CUCUMBER_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "\.feature" | sort | uniq)
     if [[ -n "${CUCUMBER_TESTS_EXISTS}" ]] ; then
     {
         echo -e "${PURPLE_BLUE}  + "
         echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} CUCUMBER"
         echo -e "${PURPLE_BLUE}  + "
         echo -e "${PURPLE_BLUE}  + " #sed 's/ /\n/g' | grep -e "\.feature"
-        echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec cucumber ${YELLOW220}${CUCUMBER_TESTS_EXISTS}${RED}"
+        echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec cucumber ${YELLOW220}"${CUCUMBER_TESTS_EXISTS}"${RED}"
         echo -e "${PURPLE_BLUE}  + ${RED}"
         eval "bundle exec cucumber ${CUCUMBER_TESTS_EXISTS}"
         echo -e "${PURPLE_BLUE}  + ${RESET}"
@@ -1209,7 +1260,7 @@ ${ALL_SPECSRB}"
     }
     fi
   } # end cucumbers_testing
-  given_cucumbers_testing "${@}"
+  given_cucumbers_testing "${FILES}"
 
 } # end if not -z 1
 fi
