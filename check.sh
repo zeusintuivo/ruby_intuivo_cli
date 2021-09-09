@@ -3,6 +3,8 @@
 # @author Zeus Intuivo <zeus@intuivo.com>
 #
 #
+echo "         local -i _specs_count="${#ALL_SPECSRB}"
+"
     load_struct_testing_wget() {
         local provider="$HOME/_/clis/execute_command_intuivo_cli/struct_testing"
         [   -e "${provider}"  ] && source "${provider}" && echo "Loading Struct Testing locally"
@@ -402,6 +404,7 @@ interrupt_cucumbers() {
 }
 
 
+OBSERVE='no'
 find_files_from_this_branch_against_master(){
   local BRANCH=$(git_current_branch)
   local FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
@@ -415,6 +418,7 @@ ${FILES2}"
   while read -r ONE_FILE; do
   {
     [[ -z "${ONE_FILE}" ]] && continue # skip empty
+    [[ "${ONE_FILE}" == "--observe" ]] && OBSERVE='yes' && continue
     [[ -e "${ONE_FILE}" ]] || continue # skip non existent
     FILES="${FILES}
 ${ONE_FILE}"
@@ -1172,17 +1176,36 @@ ${ALL_SPECSRB}"
     {
       if [[ -n "${ALL_TESTSRB}" ]] ; then
       {
-        ##### REAPEAT START
-        echo -e "${PURPLE_BLUE}  + "
-        echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} INTEGRATION"
-        echo -e "${PURPLE_BLUE}  + "
+          local -i _specs_count="${#ALL_SPECSRB}"
+          if [[ "${OBSERVE}" == 'yes' ]] ; then
+          {
+            ##### REAPEAT START
+            echo -e "${PURPLE_BLUE}  + "
+            echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} INTEGRATION"
+            echo -e "${PURPLE_BLUE}  + "
 
-        echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
-        echo -e "${PURPLE_BLUE}  + ${RESET}"
-        eval "bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
-        #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
-        echo -e "${PURPLE_BLUE}  + ${RESET}"
-        echo -e "${PURPLE_BLUE}  + ${RESET}"
+            echo -e "${PURPLE_BLUE}  + ${CYAN}nodemon --watch ${ALL_TESTSRB} --exec bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
+            echo -e "${PURPLE_BLUE}  + ${RESET}"
+            eval "nodemon --watch ${ALL_TESTSRB} --exec  bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
+            #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+            echo -e "${PURPLE_BLUE}  + ${RESET}"
+            echo -e "${PURPLE_BLUE}  + ${RESET}"
+          }
+          else
+          {
+            ##### REAPEAT START
+            echo -e "${PURPLE_BLUE}  + "
+            echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} INTEGRATION"
+            echo -e "${PURPLE_BLUE}  + "
+
+            echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
+            echo -e "${PURPLE_BLUE}  + ${RESET}"
+            eval "bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
+            #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+            echo -e "${PURPLE_BLUE}  + ${RESET}"
+            echo -e "${PURPLE_BLUE}  + ${RESET}"
+          }
+          fi
       }
       fi
 
@@ -1190,19 +1213,44 @@ ${ALL_SPECSRB}"
       {
         if command -v rspec >/dev/null 2>&1; then
         {
-          ##### REAPEAT START
-          echo -e "${PURPLE_BLUE}  + "
-          echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} Rspec"
-          echo -e "${PURPLE_BLUE}  + "
-          # echo -e "${PURPLE_BLUE}  + ${CYAN}CI_RSPEC=true bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
-          echo -e "${PURPLE_BLUE}  + ${CYAN}CI_RSPEC${RED}=true ${CYAN}bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
-          # echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec rspec ${YELLOW220}${ALL_SPECSRB}${RED}"
-          echo -e "${PURPLE_BLUE}  + ${RESET}"
-          CI_RSPEC=true bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
-          # eval "bundle exec rspec" ${ALL_SPECSRB}
-          #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
-          echo -e "${PURPLE_BLUE}  + ${RESET}"
-          echo -e "${PURPLE_BLUE}  + ${RESET}"
+          local -i _specs_count="${#ALL_SPECSRB}"
+          if [[ "${OBSERVE}" == 'yes' ]] ; then
+          {
+            if [ ${_specs_count} -eq 1 ] ; then
+            {
+              local _related_filename="$(cut -d: -f1<<<"$(basename "${ALL_SPECSRB}" | sed 's/_spec.rb/.rb/g')")"
+              echo -e "${PURPLE_BLUE}  + "
+              echo -e "${PURPLE_BLUE}  + ${CYAN}OBSERVING ${_specs_count} Test now: ${YELLOW220} Rspec"
+              echo -e "${PURPLE_BLUE}  + "
+              echo -e "${PURPLE_BLUE}  + ${CYAN}CI_RSPEC${RED}=true ${CYAN}nodemon --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
+              echo -e "${PURPLE_BLUE}  + ${RESET}"
+              CI_RSPEC=true nodemon --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
+              echo -e "${PURPLE_BLUE}  + ${RESET}"
+              echo -e "${PURPLE_BLUE}  + ${RESET}"
+            }
+            else
+            {
+
+
+            }
+            fi
+          }
+          else
+          {
+            echo -e "${PURPLE_BLUE}  + "
+            echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} Rspec"
+            echo -e "${PURPLE_BLUE}  + "
+            # echo -e "${PURPLE_BLUE}  + ${CYAN}CI_RSPEC=true bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
+            echo -e "${PURPLE_BLUE}  + ${CYAN}CI_RSPEC${RED}=true ${CYAN}bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
+            # echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec rspec ${YELLOW220}${ALL_SPECSRB}${RED}"
+            echo -e "${PURPLE_BLUE}  + ${RESET}"
+            CI_RSPEC=true bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
+            # eval "bundle exec rspec" ${ALL_SPECSRB}
+            #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+            echo -e "${PURPLE_BLUE}  + ${RESET}"
+            echo -e "${PURPLE_BLUE}  + ${RESET}"
+          }
+          fi
         }
         fi
       }
