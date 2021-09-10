@@ -1230,7 +1230,15 @@ ${ALL_SPECSRB}"
             }
             else
             {
-
+              local _related_filename="$(cut -d: -f1<<<"$(basename "${ALL_SPECSRB}" | sed 's/_spec.rb/.rb/g')")"
+              echo -e "${PURPLE_BLUE}  + "
+              echo -e "${PURPLE_BLUE}  + ${CYAN}OBSERVING ${_specs_count} Test now: ${YELLOW220} Rspec"
+              echo -e "${PURPLE_BLUE}  + "
+              echo -e "${PURPLE_BLUE}  + ${CYAN}CI_RSPEC${RED}=true ${CYAN}nodemon --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
+              echo -e "${PURPLE_BLUE}  + ${RESET}"
+              CI_RSPEC=true nodemon --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
+              echo -e "${PURPLE_BLUE}  + ${RESET}"
+              echo -e "${PURPLE_BLUE}  + ${RESET}"
 
             }
             fi
