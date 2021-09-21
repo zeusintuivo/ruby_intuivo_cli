@@ -3,8 +3,6 @@
 # @author Zeus Intuivo <zeus@intuivo.com>
 #
 #
-echo "         local -i _specs_count="${#ALL_SPECSRB}"
-"
     load_struct_testing_wget() {
         local provider="$HOME/_/clis/execute_command_intuivo_cli/struct_testing"
         [   -e "${provider}"  ] && source "${provider}" && echo "Loading Struct Testing locally"
