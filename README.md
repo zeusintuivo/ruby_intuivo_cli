@@ -1,7 +1,7 @@
 # ruby_intuivo_cli
 Bash support for using Rails in the terminal, testing, etc.
 
-- check.sh A bash script used to for testing  and rubocop and running tests in a better more productive way.
+- check.sh  An open source bash script used to for testing  and rubocop and running tests in a better more productive way.
   [x] runs rubocop with autofix
   [x] runs bundle when it fails to start
   [x] searches for minitests [_test.rb]
