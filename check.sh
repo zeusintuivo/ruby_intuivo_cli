@@ -3,8 +3,6 @@
 # @author Zeus Intuivo <zeus@intuivo.com>
 #
 #
-echo "         local -i _specs_count="${#ALL_SPECSRB}"
-"
     load_struct_testing_wget() {
         local provider="$HOME/_/clis/execute_command_intuivo_cli/struct_testing"
         [   -e "${provider}"  ] && source "${provider}" && echo "Loading Struct Testing locally"
@@ -15,6 +13,10 @@ echo "         local -i _specs_count="${#ALL_SPECSRB}"
     }
     # end load_struct_testing_wget
     load_struct_testing_wget
+
+function trim_start_space() {
+    sed -e 's/^[[:space:]]*//' | sed 's/^\ //g' | sed 's/^\t//g'
+}
 
 #colors
 [[ -z "${BLACK}" ]] && BLACK="\\033[38;5;16m"
@@ -396,15 +398,38 @@ add_ssspaceSSS_to_name(){
 interrupt_rubocop() {
     echo "${THISSCRIPTNAME} RUBOCOP INTERRUPT"
 }
+SPRING_PID=0
+kill_spring(){
+    RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec  spring stop
+    wait
+    if [ ${SPRING_PID} -gt 0 ] ; then
+    {
+      kill -9 ${SPRING_PID}
+      wait
+    }
+    fi
+    killall spring
+}
+start_spring(){
+  SPRING_PID=$(RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec  spring server&)
+}
+interrupt_rspec() {
+    echo "${THISSCRIPTNAME} RSPEC INTERRUPT"
+    kill_spring
+}
 interrupt_integrations() {
     echo "${THISSCRIPTNAME} INTEGRATIONS INTERRUPT"
+    kill_spring
 }
 interrupt_cucumbers() {
     echo "${THISSCRIPTNAME} CUCUMBERS INTERRUPT"
+    kill_spring
 }
 
 
 OBSERVE='no'
+[[ "${*}" == *"--observe"* ]] && OBSERVE='yes'
+
 find_files_from_this_branch_against_master(){
   local BRANCH=$(git_current_branch)
   local FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
@@ -418,6 +443,7 @@ ${FILES2}"
   while read -r ONE_FILE; do
   {
     [[ -z "${ONE_FILE}" ]] && continue # skip empty
+    # echo "ONE_FILE::${ONE_FILE}::"
     [[ "${ONE_FILE}" == "--observe" ]] && OBSERVE='yes' && continue
     [[ -e "${ONE_FILE}" ]] || continue # skip non existent
     FILES="${FILES}
@@ -631,7 +657,19 @@ ${FILERS}"
 rubocop_testing
 
 
-
+ruby_audit_advisory_test(){
+  RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true  bundle exec bundle-audit check --update --ignore CVE-2015-9284 CVE-2019-25025
+  _err=$?
+  if [ ${_err} -gt 0 ] ;  then
+  {
+    echo -e "${PURPLE_BLUE}  + ${RED} Ruby Audit Advisory errors. Please fix  "
+    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+    exit 130;
+  }
+  fi
+}
+ruby_audit_advisory_test
 
 extract_version(){
   sed -nre 's/^[^0-9]*(([0-9]+\.)*[0-9]+).*/\1/p'
@@ -882,7 +920,7 @@ FILES="$(find_files_from_this_branch_against_master)"
   }
   fi
 FILES="$(echo "${FILES}" | egrep "_test\.rb|_spec\.rb|\.feature")"
-
+# [[ "${*}" == *"--observe"* ]] && OBSERVE='yes'
 DOALLTESTS='yes'
 [[ -n "${FILES}" ]] && DOALLTESTS='no'
 
@@ -1034,17 +1072,17 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
     # echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
     echo -e "${PURPLE_BLUE}  + ${RESET}"
     #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
-    # eval "CI_RSPEC=true bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml " ${INTEGRATION_TESTS_EXISTS}
+    # eval " bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml " ${INTEGRATION_TESTS_EXISTS}
     if command -v rspec >/dev/null 2>&1; then
       if [[ "${INTEGRATION_TESTS_EXISTS}" == *"_spec.rb"* ]] ; then
       {
-        echo -e "${PURPLE_BLUE}  + ${CYAN}CI_RSPEC=true RACK_ENV=test RAILS_ENV=test NODE_ENV=test bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
-        RACK_ENV=test RAILS_ENV=test NODE_ENV=test CI_RSPEC=true bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml
+        echo -e "${PURPLE_BLUE}  + ${CYAN} RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
+        RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true  bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml
       }
       fi
     fi
-    echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
-    eval "RACK_ENV=test RAILS_ENV=test NODE_ENV=test bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${INTEGRATION_TESTS_EXISTS}
+    echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
+    eval "RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${INTEGRATION_TESTS_EXISTS}
     echo -e "${PURPLE_BLUE}  + ${RESET}"
     echo -e "${PURPLE_BLUE}  + ${RESET}"
 
@@ -1080,30 +1118,25 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
       CUCUMBER_TEST_FILES_NOT_FOUND=""
       while read -r ONE_FILE; do
       {
-        if [ -n "${ONE_FILE}" ] ; then
+        [[ -z "${ONE_FILE}" ]] && continue
+        if [ -f "${ONE_FILE}" ] ; then
         {
-          if [ -f "${ONE_FILE}" ] ; then
+          if [ -z "${CUCUMBER_TESTS_EXISTS}" ] ; then
           {
-
-            if [ -z "${CUCUMBER_TESTS_EXISTS}" ] ; then
-            {
-              CUCUMBER_TESTS_EXISTS="'${ONE_FILE}'"
-            }
-            else
-            {
-              CUCUMBER_TESTS_EXISTS="${CUCUMBER_TESTS_EXISTS} '${ONE_FILE}'"
-            }
-            fi
+            CUCUMBER_TESTS_EXISTS="'${ONE_FILE}'"
           }
           else
           {
+            CUCUMBER_TESTS_EXISTS="${CUCUMBER_TESTS_EXISTS} '${ONE_FILE}'"
+          }
+          fi
+        }
+        else
+        {
             CUCUMBER_TEST_FILES_NOT_FOUND="${CUCUMBER_TEST_FILES_NOT_FOUND}
 ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
         }
         fi
-
-      }
-      fi
     }
     done <<< "${ALL_CUCUMBER_TESTS}"
 
@@ -1124,9 +1157,9 @@ ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
       echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} CUCUMBER"
       echo -e "${PURPLE_BLUE}  + "
       echo -e "${PURPLE_BLUE}  + "
-      echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test bundle exec cucumber ${YELLOW220}${CUCUMBER_TESTS_EXISTS}${RED}"
+      echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec cucumber ${YELLOW220}${CUCUMBER_TESTS_EXISTS}${RED}"
       echo -e "${PURPLE_BLUE}  + ${RESET}"
-      eval "RACK_ENV=test RAILS_ENV=test NODE_ENV=test bundle exec cucumber ${CUCUMBER_TESTS_EXISTS}"
+      eval "RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec cucumber ${CUCUMBER_TESTS_EXISTS}"
       echo -e "${PURPLE_BLUE}  + ${RESET}"
       echo -e "${PURPLE_BLUE}  + ${RESET}"
     }
@@ -1172,21 +1205,27 @@ else # -z ${1}
     local ALL_SPECSRB=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_spec\.rb"| sort | uniq)
     INTEGRATION_TESTS_EXISTS="${ALL_TESTSRB}
 ${ALL_SPECSRB}"
+
+
     if [[ -n "${INTEGRATION_TESTS_EXISTS}" ]] ; then
     {
       if [[ -n "${ALL_TESTSRB}" ]] ; then
       {
+          trap interrupt_integrations INT
           local -i _specs_count="${#ALL_SPECSRB}"
           if [[ "${OBSERVE}" == 'yes' ]] ; then
           {
+            # RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec  spring server&
+            wait
+            RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec  spring status
             ##### REAPEAT START
             echo -e "${PURPLE_BLUE}  + "
-            echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} INTEGRATION"
+            echo -e "${PURPLE_BLUE}  + ${CYAN}OBSERVING NOW: ${YELLOW220} INTEGRATION"
             echo -e "${PURPLE_BLUE}  + "
 
-            echo -e "${PURPLE_BLUE}  + ${CYAN}nodemon --watch ${ALL_TESTSRB} --exec RACK_ENV=test RAILS_ENV=test NODE_ENV=test bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
+            echo -e "${PURPLE_BLUE}  + ${CYAN}nodemon --watch ${ALL_TESTSRB} --exec RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
-            eval "nodemon --watch ${ALL_TESTSRB} --exec  RACK_ENV=test RAILS_ENV=test NODE_ENV=test bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
+            eval "nodemon --watch ${ALL_TESTSRB} --exec  RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
             #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
@@ -1198,9 +1237,9 @@ ${ALL_SPECSRB}"
             echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} INTEGRATION"
             echo -e "${PURPLE_BLUE}  + "
 
-            echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
+            echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
-            eval "RACK_ENV=test RAILS_ENV=test NODE_ENV=test bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
+            eval "RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
             #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
@@ -1213,30 +1252,64 @@ ${ALL_SPECSRB}"
       {
         if command -v rspec >/dev/null 2>&1; then
         {
+          trap interrupt_rspec INT
           local -i _specs_count="${#ALL_SPECSRB}"
+          # echo "OBSERVE?::${OBSERVE}::"
           if [[ "${OBSERVE}" == 'yes' ]] ; then
           {
+            # RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec  spring server&
+            wait
+            RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec  spring status
             if [ ${_specs_count} -eq 1 ] ; then
             {
               local _related_filename="$(cut -d: -f1<<<"$(basename "${ALL_SPECSRB}" | sed 's/_spec.rb/.rb/g')")"
               echo -e "${PURPLE_BLUE}  + "
-              echo -e "${PURPLE_BLUE}  + ${CYAN}OBSERVING ${_specs_count} Test now: ${YELLOW220} Rspec"
+              echo -e "${PURPLE_BLUE}  + ${CYAN}OBSERVING ${_specs_count} Rspec now: ${YELLOW220} Rspec"
               echo -e "${PURPLE_BLUE}  + "
-              echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test CI_RSPEC${RED}=true ${CYAN}nodemon --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
+              echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true CI_RSPEC${RED}=true ${CYAN}nodemon --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
               echo -e "${PURPLE_BLUE}  + ${RESET}"
-              RACK_ENV=test RAILS_ENV=test NODE_ENV=test CI_RSPEC=true nodemon --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
+              RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true  nodemon --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
               echo -e "${PURPLE_BLUE}  + ${RESET}"
               echo -e "${PURPLE_BLUE}  + ${RESET}"
             }
             else
             {
-              local _related_filename="$(cut -d: -f1<<<"$(basename "${ALL_SPECSRB}" | sed 's/_spec.rb/.rb/g')")"
+              local _one_related=''
+              local _one_file=''
+              local _file_findings=''
+              local _related_filename=''
+              local -i _count=0
+              local _observing_files=''
+              while read -r _one_related; do
+              {
+                [[ -z "${_one_related}" ]] && continue
+                [[ ! -f "${_one_related}" ]] && continue
+                (( _count ++ ))
+                _related_filename="$(cut -d: -f1<<<"$(basename "${_one_related}" | sed 's/_spec.rb/.rb/g')")"
+                echo -e "${PURPLE_BLUE}  + ${CYAN}_related_filename${RED}:${YELLOW220}${_related_filename}"
+                echo -e "${PURPLE_BLUE}  + ${CYAN}          running${RED}:${YELLOW220}find . | ag --nocolor "/.*${_related_filename}[^/]*$" | trim_start_space | sed 's/../  /'"
+                _file_findings=$(find . | ag --nocolor "/.*${_related_filename}[^/]*$" | trim_start_space | sed 's/^\../  /g')
+                if [[ -n "${_file_findings}" ]] ; then
+                {
+                  for _one_file in ${_file_findings}; do
+                  {
+                    [[ -z "${_one_file}" ]] && continue
+                    [[ ! -f "${_one_file}" ]] && continue
+                    echo -e "${GREEN}  + ${YELLOW220}:  ${CYAN}         found${RED}:${YELLOW220}${_one_file}"
+                    _observing_files="${_observing_files}  --watch ${_one_file} "
+                  }
+                  done
+                }
+                fi
+              }
+              done <<< "${ALL_SPECSRB}"
+
               echo -e "${PURPLE_BLUE}  + "
               echo -e "${PURPLE_BLUE}  + ${CYAN}OBSERVING ${_specs_count} Test now: ${YELLOW220} Rspec"
               echo -e "${PURPLE_BLUE}  + "
-              echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test  CI_RSPEC${RED}=true ${CYAN}nodemon --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
+              echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true  CI_RSPEC${RED}=true ${CYAN}nodemon ${_observing_files} --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
               echo -e "${PURPLE_BLUE}  + ${RESET}"
-              RACK_ENV=test RAILS_ENV=test NODE_ENV=test CI_RSPEC=true nodemon --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
+              RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true  nodemon --watch ${ALL_SPECSRB} ${_observing_files}  --exec bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
               echo -e "${PURPLE_BLUE}  + ${RESET}"
               echo -e "${PURPLE_BLUE}  + ${RESET}"
 
@@ -1248,11 +1321,11 @@ ${ALL_SPECSRB}"
             echo -e "${PURPLE_BLUE}  + "
             echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} Rspec"
             echo -e "${PURPLE_BLUE}  + "
-            # echo -e "${PURPLE_BLUE}  + ${CYAN}CI_RSPEC=true bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
-            echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test CI_RSPEC${RED}=true ${CYAN}bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
+            # echo -e "${PURPLE_BLUE}  + ${CYAN} bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
+            echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true CI_RSPEC${RED}=true ${CYAN}bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
             # echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec rspec ${YELLOW220}${ALL_SPECSRB}${RED}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
-            RACK_ENV=test RAILS_ENV=test NODE_ENV=test CI_RSPEC=true bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
+            RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true  bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
             # eval "bundle exec rspec" ${ALL_SPECSRB}
             #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
@@ -1297,9 +1370,9 @@ ${ALL_SPECSRB}"
         echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} CUCUMBER"
         echo -e "${PURPLE_BLUE}  + "
         echo -e "${PURPLE_BLUE}  + " #sed 's/ /\n/g' | grep -e "\.feature"
-        echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test bundle exec cucumber ${YELLOW220}"${CUCUMBER_TESTS_EXISTS}"${RED}"
+        echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec cucumber ${YELLOW220}"${CUCUMBER_TESTS_EXISTS}"${RED}"
         echo -e "${PURPLE_BLUE}  + ${RED}"
-        eval "RACK_ENV=test RAILS_ENV=test NODE_ENV=test bundle exec cucumber ${CUCUMBER_TESTS_EXISTS}"
+        eval "RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=true bundle exec cucumber ${CUCUMBER_TESTS_EXISTS}"
         echo -e "${PURPLE_BLUE}  + ${RESET}"
         echo -e "${PURPLE_BLUE}  + ${RESET}"
     }
