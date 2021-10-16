@@ -18,21 +18,22 @@ function trim_start_space() {
     sed -e 's/^[[:space:]]*//' | sed 's/^\ //g' | sed 's/^\t//g'
 }
 
-#colors
-[[ -z "${BLACK}" ]] && BLACK="\\033[38;5;16m"
-[[ -z "${BRIGHT_BLUE87}" ]] && BRIGHT_BLUE87="\\033[38;5;87m"
-[[ -z "${CYAN}" ]] && CYAN="\\033[38;5;123m"
-[[ -z "${GRAY241}" ]] && GRAY241="\\033[38;5;241m"
-[[ -z "${GREEN}" ]] && GREEN="\\033[38;5;22m"
-[[ -z "${PURPLE_BLUE}" ]] && PURPLE_BLUE="\\033[38;5;93m"
-[[ -z "${PURPLE}" ]] && PURPLE="\\033[01;35m"
-[[ -z "${RED}" ]] && RED="\\033[38;5;1m"
-[[ -z "${RESET_PROMPT}" ]] && RESET_PROMPT="[0m"
-[[ -z "${RESET}" ]] && RESET="\\033[0m"
-[[ -z "${YELLOW220}" ]] && YELLOW220="\\033[38;5;220m"
-[[ -z "${YELLOW226}" ]] && YELLOW226="\\033[38;5;226m"
-[[ -z "${YELLOW}" ]] && YELLOW="\\033[01;33m"
-
+function load_global_colors(){
+  [[ -z "${BLACK}" ]] && BLACK="\\033[38;5;16m"
+  [[ -z "${BRIGHT_BLUE87}" ]] && BRIGHT_BLUE87="\\033[38;5;87m"
+  [[ -z "${CYAN}" ]] && CYAN="\\033[38;5;123m"
+  [[ -z "${GRAY241}" ]] && GRAY241="\\033[38;5;241m"
+  [[ -z "${GREEN}" ]] && GREEN="\\033[38;5;22m"
+  [[ -z "${PURPLE_BLUE}" ]] && PURPLE_BLUE="\\033[38;5;93m"
+  [[ -z "${PURPLE}" ]] && PURPLE="\\033[01;35m"
+  [[ -z "${RED}" ]] && RED="\\033[38;5;1m"
+  [[ -z "${RESET_PROMPT}" ]] && RESET_PROMPT="[0m"
+  [[ -z "${RESET}" ]] && RESET="\\033[0m"
+  [[ -z "${YELLOW220}" ]] && YELLOW220="\\033[38;5;220m"
+  [[ -z "${YELLOW226}" ]] && YELLOW226="\\033[38;5;226m"
+  [[ -z "${YELLOW}" ]] && YELLOW="\\033[01;33m"
+} # end load_global_colors
+load_global_colors
 load_temp_keys() {
      export GOOGLE_API_KEY="x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1xx1x1"
      export GOOGLE_CLIENT_ID="012345678900-gmk2gmk2gmk2gmk2gmk2gmk2gmk2gmk2.apps.googleusercontent.com"
@@ -59,11 +60,14 @@ load_temp_keys
 
 load_temp_env() {
           local _env="empty"
+          local -i _err=0
           ! [ -f .env ] && echo -e "${RED} ERROR - .env file must exist. Use create_env script. Or touch .env" && exit 1
           [ -f .env ] && _env=$(<.env)
           . .env
-          [[ "${_env}" == "empty" ]] && echo -e "${RED} ERROR - .env file must exist. Use create_env script. Or touch .env and must not be empty." && exit 1
-          echo -e "${PURPLE_BLUE}  + .env NEED IT FOR: entire project"
+          _err=$?
+          [[ ${_err} -gt 0 ]] && echo -e "${RED} ERROR - .env file contains an error. Fix it" && exit 1
+          [[ "${_env}" == "empty" ]] && echo -e "${RED} ERROR -  .env file must not be empty." && exit 1
+          echo -e "${PURPLE_BLUE}  + .env needed for: entire project"
           echo -e "${PURPLE_BLUE}  + "
           echo -e "${PURPLE_BLUE}  + PWD.                :${GRAY241}$(pwd)"
           echo -e "${PURPLE_BLUE}  + "
@@ -90,25 +94,26 @@ check_keys_needed() {
 } # end check_keys_needed
 check_keys_needed
 
-checkportsudo(){
+check_port_sudo(){
     local port="${1}"
     local service="${2}"
     echo "Require sudo to explore more on ports:"
-    local response=$(sudo lsof -n -i:"${port}" | grep LISTEN 2>&1) # whats_listening
+    local response=""
+    response="$(sudo lsof -n -i:${port} | grep LISTEN 2>&1 )" # whats_listening
     if [[ -n "${response}" ]] && [[ "${response}" == *"${service}"* ]] ; then
     {
       echo -e "${GREEN} PORT ${port} -- The ${service} port seems responding "
     }
     else
     {
-      echo -e "${RED} ERROR ${service} NOT RUNING ON PORT ${port}.      Check is install and running on that port   "
+      echo -e "${RED} ERROR ${service} NOT RUNNING ON PORT ${port}.      Check is install and running on that port   "
       exit 1
     }
     fi
 
 }
 
-checkport(){
+check_port(){
   local port="${1}"
   local service="${2}"
 # exec 6<>/dev/tcp/ip.addr.of.server/27017
@@ -127,7 +132,7 @@ if [[ "$(uname)" == "Darwin" ]] ; then
   if ! (netstat -ant tcp | awk '$6 == "LISTEN" && $4 ~ /\.'${port}'$/' >/dev/null 2>&1 ); then
     echo -e "${GREEN} PORT ${port} -- The ${service} port seems responding "
   else
-    checkportsudo ${port} ${service}
+    check_port_sudo ${port} ${service}
   fi
 }
 else
@@ -136,28 +141,28 @@ else
   if ! (netstat -lnt | awk '$6 == "LISTEN" && $4 ~ /\.'${port}'$/' >/dev/null 2>&1 ); then
     echo -e "${GREEN} PORT ${port} -- The ${service} port seems responding "
   else
-    checkportsudo ${port} ${service}
+    check_port_sudo ${port} ${service}
   fi
 }
 fi
 
 
-} # end checkportmongo
+} # end check_port_mongo
 
 
-checkportmongo(){
+check_port_mongo(){
 if ! (netstat -ant tcp | awk '$6 == "LISTEN" && $4 ~ /\.27017$/' >/dev/null 2>&1 ); then
   echo "PORT 27017 -- The mongo port seems responding "
 else
-  # msg_red "ERROR MONGO NOT RUNING ON PORT 27017.      Check is install and running on that port   "
-  echo -e "${RED} ERROR MONGO NOT RUNING ON PORT 27017.      Check is install and running on that port   "
+  # msg_red "ERROR MONGO NOT RUNNING ON PORT 27017.      Check is install and running on that port   "
+  echo -e "${RED} ERROR MONGO NOT RUNNING ON PORT 27017.      Check is install and running on that port   "
   exit 1
 fi
-} # end checkportmongo
+} # end check_port_mongo
 
-checkportpostgresql(){
-checkport 5432 postgresql
-} # end checkportpostgresql
+check_port_postgresql(){
+check_port 5432 postgresql
+} # end check_port_postgresql
 
 
 check_requirements(){
@@ -168,10 +173,10 @@ check_requirements(){
     echo -e "Checking "${requirement}" "
     case "${requirement}" in
       'mongo' )
-        checkportmongo
+        check_port_mongo
         ;;
       'postgresql'  )
-        checkportpostgresql
+        check_port_postgresql
         ;;
     esac
   }
@@ -192,6 +197,7 @@ THISSCRIPTNAME=`basename "$0"`
 check_replacer () {
   local REPLACER="$1"
   if command -v "${REPLACER}" >/dev/null 2>&1; then
+  {
     # It looks installed
     # .. is it working properly
     # msg_green " ${1} INSTALLED."
@@ -204,11 +210,14 @@ check_replacer () {
     if [[ $PROPERLYWORKING == *"GNU"* ]]; then { echo "GNU"; return;} else { echo "MAC";return;} fi
     echo "checked";
     return;
+  }
   else
+  {
     # msg_red "${GREEN} ${RED} CANNOT REPLACE ...${1} IS MISSING ";
     # msg_red " NEED TO INSTALL ${1}.       Linux:    sudo apt-get install ${1}         Mac:     brew install ${1}   "
     echo "install";
     return;
+  }
   fi
 }
 
@@ -234,28 +243,28 @@ msg_install () {
 # REPLACER="sed";
 # Try vim's ex
 REPLACER="sed";
-VALIDREPLACER=$(check_replacer "${REPLACER}")
+VALID_REPLACER=$(check_replacer "${REPLACER}")
 
 
-if [[ $VALIDREPLACER == "error" ]] ; then
+if [[ $VALID_REPLACER == "error" ]] ; then
   msg_red "Error with replacer ${REPLACER}"
   msg_red " - Error:"
   cat /tmp/ersetze_test_${REPLACER}.txt
    rm /tmp/ersetze_test_${REPLACER}.txt
 fi
 
-# if [[ $VALIDREPLACER == "install" ]] ; then
+# if [[ $VALID_REPLACER == "install" ]] ; then
 #   msg_install "${REPLACER}"
 # fi
 rm /tmp/ersetze_test_${REPLACER}.txt
 
 # TODO - Remove Repetition HERE
 # ? empty still
-# if [[ $VALIDREPLACER == "install" || $VALIDREPLACER == "error"  ]] ; then
+# if [[ $VALID_REPLACER == "install" || $VALID_REPLACER == "error"  ]] ; then
 #   REPLACER="sed";
-#   VALIDREPLACER=$(check_replacer "${REPLACER}")
+#   VALID_REPLACER=$(check_replacer "${REPLACER}")
 
-#   if [[ $VALIDREPLACER == "error" ]] ; then
+#   if [[ $VALID_REPLACER == "error" ]] ; then
 #     msg_red "Error with replacer ${REPLACER}"
 #     msg_red " - Error:"
 #     cat /tmp/ersetze_test_${REPLACER}.txt
@@ -263,7 +272,7 @@ rm /tmp/ersetze_test_${REPLACER}.txt
 #     exit 1;
 #   fi
 
-#   if [[ $VALIDREPLACER == "install" ]] ; then
+#   if [[ $VALID_REPLACER == "install" ]] ; then
 #     msg_install "${REPLACER}"
 #     rm /tmp/ersetze_test_${REPLACER}.txt
 #     exit 1;
@@ -272,24 +281,24 @@ rm /tmp/ersetze_test_${REPLACER}.txt
 
 
 
-REPLACERGNU="NO"
-if [[ $VALIDREPLACER == "GNU" ]] ; then
-  REPLACERGNU="YES"
+REPLACER_GNU="NO"
+if [[ $VALID_REPLACER == "GNU" ]] ; then
+  REPLACER_GNU="YES"
 fi
 
 # Test
-# echo "REPLACERGNU: $REPLACERGNU"
-# echo "VALIDREPLACER: $VALIDREPLACER"
+# echo "REPLACER_GNU: $REPLACER_GNU"
+# echo "VALID_REPLACER: $VALID_REPLACER"
 # exit
 # C H E C K   R E P L A C E   F U N C T I O N S   I N S T A L L E D  -- RESULTS
 # Results as
-#             $REPLACERGNU  NO OR YES
-#             $REPLACERGNU  ex or sed
+#             $REPLACER_GNU  NO OR YES
+#             $REPLACER_GNU  ex or sed
 #             halts execution if not found
 #
 # C H E C K   R E P L A C E   F U N C T I O N S   I N S T A L L E D  -- End
 
-# if [[ $REPLACERGNU == "NO" ]] ; then
+# if [[ $REPLACER_GNU == "NO" ]] ; then
 #   msg_install "sed" "This script only works well with Gnu SED
 #        On MAC:
 #                 brew install gnu-sed
@@ -350,7 +359,7 @@ fi
 
 
 
-if command -v git_current_branch >/dev/null 2>&1; then
+if command -v git_current_branch >/dev/null 2>&1; then # git_current_branch polyfill
 {
   echo " "
   echo -e "Get Branch git_current_branch installed"
@@ -434,11 +443,11 @@ find_files_from_this_branch_against_master(){
   local BRANCH=$(git_current_branch)
   local FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
   local FILES2=$(git status -sb | egrep -v "^(\sD)" | egrep -v "shared/pids/puma.state" | egrep -v "^(\?\?\spublic/assets)" | egrep -v "##" | cut -c4- | egrep -v "commit_exception\.list|\.xls|\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.ruby\-version|db/patch|bundles|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.bash|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
-  local ONE_FILE="" FILES="" FILESTMP=""
-  FILESTMP="${FILES1}
+  local ONE_FILE="" FILES="" FILES_TMP=""
+  FILES_TMP="${FILES1}
 ${FILES2}"
 
-  FILESTMP=$(echo "${FILESTMP}" | sort | uniq)
+  FILES_TMP=$(echo "${FILES_TMP}" | sort | uniq)
   # // Only existing files - start
   while read -r ONE_FILE; do
   {
@@ -449,11 +458,93 @@ ${FILES2}"
     FILES="${FILES}
 ${ONE_FILE}"
   }
-  done <<< "${FILESTMP}"
+  done <<< "${FILES_TMP}"
   # // Only existing files - end
   echo "${FILES}"
   return 0
 }
+function get_longest_line_number(){
+  local -A FILES="${@}"
+  FILES="${@}"
+  local -i FILE_LONGEST=0
+  local -i FILE_LEN=0
+  local ONE_FILE=""
+  while read -r ONE_FILE; do
+  {
+    [[ -z "${ONE_FILE}" ]] && continue
+    FILE_LEN="${#ONE_FILE}"
+    (( FILE_LEN > FILE_LONGEST )) &&  FILE_LONGEST=${FILE_LEN}
+  }
+  done <<< "${FILES}"
+  (( FILE_LONGEST++ ))
+  (( FILE_LONGEST++ ))
+  echo ${FILE_LONGEST}
+  return 0
+} # end get_longest_line_number
+function construct_title_rubocop(){
+  local -i FILE_LONGEST=${1}
+  local TITLE="  +----------${CYAN}Rubocop${PURPLE_BLUE}---${CYAN}checking${PURPLE_BLUE}---${CYAN}files${PURPLE_BLUE}-"
+  local -i COUNTER=0
+  until [ $COUNTER -ge $FILE_LONGEST ]; do
+  {
+    (( COUNTER++ ))
+    if (( $COUNTER > 37 )) ; then   # 37 is the length of this line .../\... above without "colors" space
+    {
+      TITLE="${TITLE}-"
+    }
+    fi
+  }
+  done
+  TITLE="${TITLE}+"
+  echo -e "${TITLE}"
+  return 0
+} # end construct_title_rubocop
+function repeat_char(){
+  local -i FILE_LONGEST=${1}
+  local char="${2}"
+  local LINER=""
+  local -i COUNTER=0
+  until [ $COUNTER -ge $FILE_LONGEST ]; do
+  {
+    (( COUNTER++ ))
+    LINER="${LINER}${char}"
+  }
+  done
+  echo -e "${LINER}"
+  return 0
+} # end repeat_char
+function construct_files_with_fillers (){
+  # A filler is §
+  # Adding fillers looks like
+  # test/workers/twilio_cleaner_worker_test.rb§§§§§§§§§§§§§§§§§
+  local -i FILE_LONGEST=${1}
+  local ALL_FILLERS=""
+  local FILES="${@:2}"
+  local ONE_FILE=""
+  local ONE_FILLER=""
+  while read -r ONE_FILE; do
+  {
+    [[ -z "${ONE_FILE}" ]] && continue
+    [[ ! -e "${ONE_FILE}" ]] && continue
+    ONE_FILLER=$(add_ssspaceSSS_to_name "${ONE_FILE}" ${FILE_LONGEST})
+    ALL_FILLERS="${ALL_FILLERS}
+${ONE_FILLER}"
+  }
+  done <<< "${FILES}"
+  echo -n "${ALL_FILLERS}"
+  return 0
+} # end construct_files_with_fillers
+function output_fillers_to_stdout(){
+  local ONE_FILLER=""
+  local ALL_FILERS="${@}"
+  while read -r ONE_FILLER; do
+  {
+    [[ -z "${ONE_FILLER}" ]] && continue
+    echo -e "  ${PURPLE_BLUE}+${CYAN} ${ONE_FILLER} ${PURPLE_BLUE}+" | sed 's@§@ @g'
+  }
+  done <<< "${ALL_FILERS}"
+  return 0
+}  # end output_fillers_to_stdout
 rubocop_testing() {
   local _err=$?
   trap interrupt_rubocop INT
@@ -483,87 +574,35 @@ rubocop_testing() {
     echo -e "${PURPLE_BLUE}  +"
 
     local -i FILE_LONGEST=0
-    local -i FILE_LEN=0
-    while read -r ONE_FILE; do
-    {
-      if [ -n "${ONE_FILE}" ] ; then
-      {
-        FILE_LEN="${#ONE_FILE}"
-        if (( $FILE_LEN > $FILE_LONGEST )) ; then
-        {
-          FILE_LONGEST=$FILE_LEN
-        }
-        fi
-      }
-      fi
-    }
-    done <<< "${FILES}"
-
-    (( FILE_LONGEST++ ))
-    (( FILE_LONGEST++ ))
+    FILE_LONGEST=$(get_longest_line_number "${FILES}")
+    local TITLER=""
+    TITLER="$(construct_title_rubocop "${FILE_LONGEST}")"
     local SPACER=""
+    SPACER="$(repeat_char "${FILE_LONGEST}" " ")"
     local LINER=""
-    local TITLER="  +----------${CYAN}Rubocop${PURPLE_BLUE}---${CYAN}checking${PURPLE_BLUE}---${CYAN}files${PURPLE_BLUE}-"
-    local -i COUNTER=0
-    until [ $COUNTER -ge $FILE_LONGEST ]; do
-    {
-      (( COUNTER++ ))
-      SPACER="${SPACER} "
-      LINER="${LINER}-"
-      if (( $COUNTER > 37 )) ; then
-      {
-        TITLER="${TITLER}-"
-      }
-      fi
-    }
-    done
-    TITLER="${TITLER}+"
+    LINER="$(repeat_char "${FILE_LONGEST}" "-")"
+
     echo -e "${TITLER}"
     echo -e "${PURPLE_BLUE}  +${SPACER}+ "
     echo -e "~~+${SPACER}+~~${GRAY241}"
-    local FILERS=""
+
     local ALL_FILERS=""
+    ALL_FILERS=$(construct_files_with_fillers "${FILE_LONGEST}" "${FILES}")
+    output_fillers_to_stdout "${ALL_FILERS}"
 
-
-
-    while read -r ONE_FILE; do
-    {
-      if [[ -n "${ONE_FILE}" ]] ; then
-      {
-        if [[ -e "${ONE_FILE}" ]] ; then
-        {
-          FILERS=$(add_ssspaceSSS_to_name "${ONE_FILE}" $FILE_LONGEST)
-          ALL_FILERS="${ALL_FILERS}
-${FILERS}"
-          #echo -e "${PURPLE_BLUE}  + ${BRIGHT_BLUE87}${ONE_FILE} ${PURPLE_BLUE}  + "
-        }
-        fi
-      }
-      fi
-    }
-    done <<< "${FILES}"
-    while read -r ONE_FILE; do
-    {
-      if [[ -n "${ONE_FILE}" ]] ; then
-      {
-        echo -e "  ${PURPLE_BLUE}+${CYAN} ${ONE_FILE} ${PURPLE_BLUE}+" | sed 's@§@ @g'
-      }
-      fi
-    }
-    done <<< "${ALL_FILERS}"
     echo -e "${PURPLE_BLUE}  +${SPACER}+ "
     echo -e "~~+${SPACER}+~~${GRAY241}"
     # /// ----- rubocop group test --  start
     (( DEBUG )) && echo "bundle exec rubocop -a "${FILES}
-    local RUBORESULT BUNDLING
-    # bundle exec rubocop -a ${FILES} 2>&1 | tee "${RUBORESULT}"
-    RUBORESULT="$(bundle exec rubocop -a ${FILES} 2>&1)"
+    local RUBOCOP_RESULT BUNDLING
+    # bundle exec rubocop -a ${FILES} 2>&1 | tee "${RUBOCOP_RESULT}"
+    RUBOCOP_RESULT="$(bundle exec rubocop -a ${FILES} 2>&1)"
     _err=$?
     if [ ${_err} -gt 0 ] ; then
     {
-      if [[ -n "${RUBORESULT}" ]] && [[ "${RUBORESULT}" != *"could not find"* ]]; then
+      if [[ -n "${RUBOCOP_RESULT}" ]] && [[ "${RUBOCOP_RESULT}" != *"could not find"* ]]; then
       {
-        echo -e "  ${RED}+${YELLOW220} ${RUBORESULT} ${RED}+ FAILED first attempt to run rubocop ... Attempting to bundle"
+        echo -e "  ${RED}+${YELLOW220} ${RUBOCOP_RESULT} ${RED}+ FAILED first attempt to run rubocop ... Attempting to bundle"
         BUNDLING="$(bundle  2>&1)"
         _err=$?
         if [ ${_err} -gt 0 ] ; then
@@ -574,7 +613,7 @@ ${FILERS}"
         }
         fi
         echo "bundle exec rubocop -a ${FILES}"
-        RUBORESULT=$(bundle exec rubocop -a "${FILES}" 2>&1)
+        RUBOCOP_RESULT=$(bundle exec rubocop -a "${FILES}" 2>&1)
         _err=$?
         # /// ----- one line per line --  start
         for ONE_FILE in ${FILES}; do
@@ -582,13 +621,13 @@ ${FILERS}"
           [ -z "${ONE_FILE}" ] && continue
           [ -e "${ONE_FILE}" ] || continue
           echo "bundle exec rubocop -a ${ONE_FILE}"
-          RUBORESULT="$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)"
+          RUBOCOP_RESULT="$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)"
           _err=$?
           if [ ${_err} -gt 0 ] ; then
           {
-            if [[ -n "${RUBORESULT}" ]] && [[ "${RUBORESULT}" != *"could not find"* ]]; then
+            if [[ -n "${RUBOCOP_RESULT}" ]] && [[ "${RUBOCOP_RESULT}" != *"could not find"* ]]; then
             {
-              echo -e "  ${RED}+${YELLOW220} ${RUBORESULT} ${RED}+ FAILED first attempt to run rubocop ... Attempting to bundle"
+              echo -e "  ${RED}+${YELLOW220} ${RUBOCOP_RESULT} ${RED}+ FAILED first attempt to run rubocop ... Attempting to bundle"
               BUNDLING="$(bundle  2>&1)"
               _err=$?
               if [ ${_err} -gt 0 ] ; then
@@ -599,21 +638,21 @@ ${FILERS}"
               }
               fi
               echo "bundle exec rubocop -a ${ONE_FILE}"
-              RUBORESULT=$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)
+              RUBOCOP_RESULT=$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)
             }
             fi
           }
           fi
 
-          if [ -n "${RUBORESULT}" ] && [[ "${RUBORESULT}" != *"no offenses detected"* ]]; then
+          if [ -n "${RUBOCOP_RESULT}" ] && [[ "${RUBOCOP_RESULT}" != *"no offenses detected"* ]]; then
           {
             FILERS=$(add_ssspaceSSS_to_name "${ONE_FILE}" $FILE_LONGEST)
             echo -e "  ${RED}+${YELLOW220} ${FILERS} ${RED}+ FAILED" | sed 's@§@ @g'
-            while read -r  RUBORESULT_LINE; do
+            while read -r  RUBOCOP_RESULT_LINE; do
             {
-              echo -e "  ${RED}+${YELLOW220}---${RESET} ${RUBORESULT_LINE}  "
+              echo -e "  ${RED}+${YELLOW220}---${RESET} ${RUBOCOP_RESULT_LINE}  "
             }
-            done <<< "${RUBORESULT}"
+            done <<< "${RUBOCOP_RESULT}"
           }
           fi
         }
@@ -623,15 +662,15 @@ ${FILERS}"
       fi
     }
     fi
-    if [ -n "${RUBORESULT}" ] && [[ "${RUBORESULT}" != *"no offenses detected"* ]]; then
+    if [ -n "${RUBOCOP_RESULT}" ] && [[ "${RUBOCOP_RESULT}" != *"no offenses detected"* ]]; then
     {
       FILERS=$(add_ssspaceSSS_to_name "${FILES}" $FILE_LONGEST)
       echo -e "  ${RED}+${YELLOW220} ${FILERS} ${RED}+ FAILED" | sed 's@§@ @g'
-      while read -r  RUBORESULT_LINE; do
+      while read -r  RUBOCOP_RESULT_LINE; do
       {
-        echo -e "  ${RED}+${YELLOW220}---${RESET} ${RUBORESULT_LINE}  "
+        echo -e "  ${RED}+${YELLOW220}---${RESET} ${RUBOCOP_RESULT_LINE}  "
       }
-      done <<< "${RUBORESULT}"
+      done <<< "${RUBOCOP_RESULT}"
     }
     fi
     # /// ----- rubocop group test --  end
@@ -658,6 +697,14 @@ rubocop_testing
 
 
 ruby_audit_advisory_test(){
+  if ! command -v bundle-audit >/dev/null 2>&1  ; then
+  {
+    echo -e "  ${RED}+${YELLOW220} bundle-audit ${RED}+ NOT FOUND ...${PURPLE}  Attempting to install and add to bundle"
+    gem install bundle-audit
+    bundle add bundle-audit
+  }
+  fi
+  end
   RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  bundle exec bundle-audit check --update --ignore CVE-2015-9284 CVE-2019-25025
   _err=$?
   if [ ${_err} -gt 0 ] ;  then
