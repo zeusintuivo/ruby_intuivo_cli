@@ -464,7 +464,7 @@ ${ONE_FILE}"
   return 0
 }
 function get_longest_line_number(){
-  local -A FILES="${@}"
+  local FILES="${@}"
   FILES="${@}"
   local -i FILE_LONGEST=0
   local -i FILE_LEN=0
@@ -704,7 +704,6 @@ ruby_audit_advisory_test(){
     bundle add bundle-audit
   }
   fi
-  end
   RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  bundle exec bundle-audit check --update --ignore CVE-2015-9284 CVE-2019-25025
   _err=$?
   if [ ${_err} -gt 0 ] ;  then
