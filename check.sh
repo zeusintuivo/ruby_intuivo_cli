@@ -995,11 +995,12 @@ FILES="$(find_files_from_this_branch_against_master)"
     FILES="${@}"
   }
   fi
-FILES="$(echo "${FILES}" | egrep "_test\.rb|_spec\.rb|\.feature")"
+FILES="$(echo "${FILES}" | egrep "^test|^spec|^feature|_test\.rb|_spec\.rb|\.feature")"
+# echo FILES:${FILES}
 # [[ "${*}" == *"--observe"* ]] && OBSERVE='yes'
 DOALLTESTS='yes'
 [[ -n "${FILES}" ]] && DOALLTESTS='no'
-
+# echo DOALLTESTS:${DOALLTESTS}
 if [[ "${DOALLTESTS}" == 'yes' ]] ; then
 {
   echo " "
@@ -1163,7 +1164,7 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
     echo -e "${PURPLE_BLUE}  + ${RESET}"
 
   } # end integrations_testing
-  integrations_testing "${@}"
+  integrations_testing "${FILES}"
 
   cucumbers_testing() {
     echo " "
@@ -1266,7 +1267,7 @@ else # -z ${1}
 
     echo -e "${PURPLE_BLUE}  + ${CYAN}:"
     echo -e "${PURPLE_BLUE}  + ${CYAN}:"
-    echo -e "${PURPLE_BLUE}  + ${CYAN}:  TESTS were given       "
+    echo -e "${PURPLE_BLUE}  + ${CYAN}:  TESTS were given     ${*}  "
     echo -e "${PURPLE_BLUE}  + ${CYAN}:"
     echo -e "${PURPLE_BLUE}  + ${CYAN}:"
     echo -e "${PURPLE_BLUE}  + ${CYAN}:"
@@ -1277,12 +1278,12 @@ else # -z ${1}
 
     # PERFORM TESTS
     #ruby -I"lib:test" -I"${RAKE_LIB_FOLDER}" "${LOCATION_RAKE_LIB}" "${1}"
-    local ALL_TESTSRB=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_test\.rb"| sort | uniq)
-    local ALL_SPECSRB=$(echo "${@}" | sed 's/ /\n/g' | grep -e "_spec\.rb"| sort | uniq)
+    local ALL_TESTSRB=$(echo "${@}" | sed 's/ /\n/g' | egrep "^test|_test\.rb"| sort | uniq)
+    local ALL_SPECSRB=$(echo "${@}" | sed 's/ /\n/g' | egrep "^spec|_spec\.rb"| sort | uniq)
     INTEGRATION_TESTS_EXISTS="${ALL_TESTSRB}
 ${ALL_SPECSRB}"
 
-
+    # echo "DEBUG INTEGRATION_TESTS_EXISTS:${INTEGRATION_TESTS_EXISTS}"
     if [[ -n "${INTEGRATION_TESTS_EXISTS}" ]] ; then
     {
       if [[ -n "${ALL_TESTSRB}" ]] ; then
@@ -1432,7 +1433,7 @@ ${ALL_SPECSRB}"
 
   given_cucumbers_testing() {
     echo " "
-    CUCUMBER_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | grep -e "\.feature" | sort | uniq)
+    CUCUMBER_TESTS_EXISTS=$(echo "${@}" | sed 's/ /\n/g' | egrep "^feature|\.feature" | sort | uniq)
      [[ -z "${CUCUMBER_TESTS_EXISTS}" ]] && return 0
     echo -e "${YELLOW220} STAGE 6-B: ${CYAN} Cucumber testing  only given files " # ${CUCUMBER_TESTS_EXISTS}
     echo -e "${PURPLE_BLUE}+-+"
