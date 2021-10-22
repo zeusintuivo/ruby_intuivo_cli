@@ -240,7 +240,7 @@ msg_install () {
           ${2}
            "
 }
-# REPLACER="sed";
+# REPLACER="sed"; bix mehmetsafayildiz
 # Try vim's ex
 REPLACER="sed";
 VALID_REPLACER=$(check_replacer "${REPLACER}")
@@ -695,6 +695,36 @@ rubocop_testing() {
 } # end rubocop_testing
 rubocop_testing
 
+ruby_audit_i18n_tasks_test(){
+  if ! command -v i18n-tasks >/dev/null 2>&1  ; then
+  {
+    echo -e "  ${RED}+${YELLOW220} i18n-tasks ${RED}+ NOT FOUND ...${PURPLE}  Attempting to install and add to bundle"
+    gem install i18n-tasks
+    bundle add i18n-tasks
+  }
+  fi
+  RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  bundle exec   i18n-tasks missing
+  _err=$?
+  if [ ${_err} -gt 0 ] ;  then
+  {
+    echo -e "${PURPLE_BLUE}  + ${RED} i18n-tasks missing errors. Please fix  "
+    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+    exit 130;
+  }
+  fi
+  RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  bundle exec   i18n-tasks normalize
+  _err=$?
+  if [ ${_err} -gt 0 ] ;  then
+  {
+    echo -e "${PURPLE_BLUE}  + ${RED} i18n-tasks missing errors. Please fix  "
+    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+    exit 130;
+  }
+  fi
+}
+ruby_audit_i18n_tasks_test
 
 ruby_audit_advisory_test(){
   if ! command -v bundle-audit >/dev/null 2>&1  ; then
