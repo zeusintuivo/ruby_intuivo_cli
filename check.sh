@@ -855,7 +855,7 @@ rake_lib_folder() {
 RAKE_EXECUTABLE=$(echo "${RAKE_EXECUTABLE}" | sed 's/" /"/g' )
               # ALL THE TESTS
               #ruby -I\"lib:test\" -I\"${RAKE_LIB_FiOLDER}\"                               \"${LOCATION_RAKE_LIB}\"  "                                              ${INTEGRATION_TESTS_EXISTS}
-              #ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/lib/tasks/cleanup_email_test.rb" "test/lib/tasks/cleanup_sms_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+              #ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb"
 
               # Email
               # ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb"  "test/lib/tasks/cleanup_email_test.rb"
@@ -1040,31 +1040,6 @@ if [[ "${DOALLTESTS}" == 'yes' ]] ; then
 ${ALL_SPECSRB}"
   #  ALL_INTEGRATION_TESTS="test/models/insurance_test.rb
   #test/workers/twilio_cleaner_worker_test.rb
-  #test/controllers/account/doctors_controller_test.rb
-  #test/controllers/doctors/specialties_controller_test.rb
-  #test/workers/dtms_cleaner_worker_test.rb
-  #test/controllers/accounts_controller_test.rb
-  #test/integration/inquiry_plugin_integration_test.rb
-  #test/controllers/inquiries/confirmations_controller_test.rb
-  #test/integration/practice_integration_test.rb
-  #test/services/unprocessed_bookings_test.rb
-  #test/mailers/user_mailer_test.rb
-  #test/validators/partner_token_validator_test.rb
-  #test/models/timeslot_test.rb
-  #test/lib/tasks/cleanup_email_test.rb
-  #test/lib/tasks/cleanup_sms_test.rb
-  #test/models/account_test.rb
-  #test/models/booking_test.rb
-  #test/integration/patient_flows_test.rb
-  #test/controllers/account_backend_controller_test.rb
-  #test/lib/tasks/unprocessed_bookings_reminders_test.rb
-  #test/models/inquiry_test.rb
-  #test/models/partner_test.rb
-  #test/mailers/smser_test.rb
-  #test/controllers/directory_controller_test.rb
-  #test/controllers/account/calendars_controller_test.rb
-  #test/models/patient_test.rb
-  #test/integration/review_integration_test.rb
   #services/place_service/tests/address_serializer_test.rb"
 
 
@@ -1148,7 +1123,7 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
 
     # echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
     echo -e "${PURPLE_BLUE}  + ${RESET}"
-    #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+    #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb"
     # eval " bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml " ${INTEGRATION_TESTS_EXISTS}
     if command -v rspec >/dev/null 2>&1; then
       if [[ "${INTEGRATION_TESTS_EXISTS}" == *"_spec.rb"* ]] ; then
@@ -1180,13 +1155,6 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
     # PERFORM TESTS
     ALL_CUCUMBER_TESTS=$(find * -type f -name "*.feature" | sort | uniq)
     #  ALL_CUCUMBER_TESTS="features/sms_resilience.feature
-    #features/admin/support_inquiry_interface.feature
-    #features/inquiry_dispatch.feature
-    #features/publishers/custom_checkout_template.feature
-    #features/admin/admin_booking_interface.feature
-    #features/admin/practice_management.feature
-    #features/review.feature
-    #features/times.feature
     #features/account/inquiry_management.feature"
 
 
@@ -1303,7 +1271,7 @@ ${ALL_SPECSRB}"
             echo -e "${PURPLE_BLUE}  + ${CYAN}nodemon --watch ${ALL_TESTSRB} --exec ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN}  bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
             eval "nodemon --watch ${ALL_TESTSRB} --exec  RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
-            #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+            #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb"  "services/place_service/tests/address_serializer_test.rb"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
           }
@@ -1317,7 +1285,7 @@ ${ALL_SPECSRB}"
             echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN} bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
             eval "RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
-            #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+            #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb"  "services/place_service/tests/address_serializer_test.rb"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
           }
@@ -1405,7 +1373,7 @@ ${ALL_SPECSRB}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
             RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
             # eval "bundle exec rspec" ${ALL_SPECSRB}
-            #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb" "test/controllers/account/doctors_controller_test.rb" "test/controllers/doctors/specialties_controller_test.rb" "test/workers/dtms_cleaner_worker_test.rb" "test/controllers/accounts_controller_test.rb" "test/integration/inquiry_plugin_integration_test.rb" "test/controllers/inquiries/confirmations_controller_test.rb" "test/integration/practice_integration_test.rb" "test/services/unprocessed_bookings_test.rb" "test/mailers/user_mailer_test.rb" "test/validators/partner_token_validator_test.rb" "test/models/timeslot_test.rb" "test/models/account_test.rb" "test/models/booking_test.rb" "test/integration/patient_flows_test.rb" "test/controllers/account_backend_controller_test.rb" "test/lib/tasks/unprocessed_bookings_reminders_test.rb" "test/models/inquiry_test.rb" "test/models/partner_test.rb" "test/mailers/smser_test.rb" "test/controllers/directory_controller_test.rb" "test/controllers/account/calendars_controller_test.rb" "test/models/patient_test.rb" "test/integration/review_integration_test.rb" "services/place_service/tests/address_serializer_test.rb"
+            #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "services/place_service/tests/address_serializer_test.rb"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
           }
