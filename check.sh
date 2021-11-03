@@ -3,6 +3,18 @@
 # @author Zeus Intuivo <zeus@intuivo.com>
 #
 #
+typeset -i CPU_COUNT=1
+if ( ! command -v nproc >/dev/null 2>&1; ) ; then {
+  CPU_COUNT="$(nproc)"  # Linux
+}
+fi
+if ( ! command -v sysctl >/dev/null 2>&1; ) ; then {
+  CPU_COUNT="$(sysctl -n hw.logicalcpu)"  # Mac nproc same
+}
+fi
+[ -z $CPU_COUNT ] && CPU_COUNT=1
+[ $CPU_COUNT -lt 1 ] && CPU_COUNT=1
+
     load_struct_testing_wget() {
         local provider="$HOME/_/clis/execute_command_intuivo_cli/struct_testing"
         [   -e "${provider}"  ] && source "${provider}" && echo "Loading Struct Testing locally"
