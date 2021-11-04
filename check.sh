@@ -442,7 +442,7 @@ OBSERVE='no'
 find_files_from_this_branch_against_master(){
   local BRANCH=$(git_current_branch)
   local FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
-  local FILES2=$(git status -sb | egrep -v "^(\sD)" | egrep -v "shared/pids/puma.state" | egrep -v "^(\?\?\spublic/assets)" | egrep -v "##" | cut -c4- | egrep -v "commit_exception\.list|\.xls|\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.ruby\-version|db/patch|bundles|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.bash|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
+  local FILES2=$(git status -sb | egrep -v "^(\sD)" | egrep -v "shared/pids/puma.state" | egrep -v "^(\?\?\spublic/assets)" | egrep -v "##" | cut -c4- | egrep -v "commit_exception\.list|.rubocop_todo.yml|\.xls|\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.ruby\-version|db/patch|bundles|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.bash|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
   local ONE_FILE="" FILES="" FILES_TMP=""
   FILES_TMP="${FILES1}
 ${FILES2}"
@@ -707,9 +707,9 @@ ruby_audit_i18n_tasks_test(){
   _err=$?
   if [ ${_err} -gt 0 ] ;  then
   {
-    echo -e "${PURPLE_BLUE}  + ${RED} i18n-tasks missing errors. Please fix  "
-    echo -e "${PURPLE_BLUE}  + ${CYAN}"
-    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+    echo -e "${PURPLE_BLUE}  + Error running    "
+    echo -e "${PURPLE_BLUE}  + ${RED} bundle exec i18n-tasks missing ${PURPLE_BLUE} ${CYAN}"
+    echo -e "${PURPLE_BLUE}  + ${YELLOW} Please fix${CYAN}"
     exit 130;
   }
   fi
@@ -717,9 +717,9 @@ ruby_audit_i18n_tasks_test(){
   _err=$?
   if [ ${_err} -gt 0 ] ;  then
   {
-    echo -e "${PURPLE_BLUE}  + ${RED} i18n-tasks missing errors. Please fix  "
-    echo -e "${PURPLE_BLUE}  + ${CYAN}"
-    echo -e "${PURPLE_BLUE}  + ${CYAN}"
+    echo -e "${PURPLE_BLUE}  + Error running    "
+    echo -e "${PURPLE_BLUE}  + ${RED} bundle exec i18n-tasks normalize ${PURPLE_BLUE} ${CYAN}"
+    echo -e "${PURPLE_BLUE}  + ${YELLOW} Please fix${CYAN}"
     exit 130;
   }
   fi
@@ -731,6 +731,14 @@ ruby_audit_advisory_test(){
   {
     echo -e "  ${RED}+${YELLOW220} bundle-audit ${RED}+ NOT FOUND ...${PURPLE}  Attempting to install and add to bundle"
     gem install bundle-audit
+    bundle add bundle-audit
+  }
+  fi
+  bundle info bundle-audit
+  _err=$?
+  if [ ${_err} -eq 7 ] ;  then
+  {
+    echo -e "  ${RED}+${YELLOW220} bundle-audit ${RED}+ not Gemfile ...${PURPLE}  Attempting add to bundle"
     bundle add bundle-audit
   }
   fi
