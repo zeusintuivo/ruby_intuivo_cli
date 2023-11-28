@@ -451,9 +451,22 @@ interrupt_cucumbers() {
 OBSERVE='no'
 [[ "${*}" == *"--observe"* ]] && OBSERVE='yes'
 
-find_files_from_this_branch_against_master(){
+
+find_files_from_this_branch_against(){
+	# trap '{ echo -e "${PURPLE_BLUE}  + ${GRAY241} Branch ${_against} ${RED}NOT ${GRAY241}found "; return 130; }' ERR
+	local _against="${1}"
+	if [[ -n "${_against:-}" ]] && [ $(git branch --list "${_against}") ] ; then
+	{
+		echo -e "\nfind_files_from_this_branch_against${PURPLE_BLUE}  + ${GRAY241} Branch ${_against} found "
+	}
+  else
+	{
+    return 1
+	}
+	fi
+
   local BRANCH=$(git_current_branch)
-  local FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" master) | egrep "\.rb|\.rake")
+  local FILES1=$(git diff --name-only "${BRANCH}" $(git merge-base "${BRANCH}" "${_against}") | egrep "\.rb|\.rake")
   local FILES2=$(git status -sb | egrep -v "^(\sD)" | egrep -v "shared/pids/puma.state" | egrep -v "^(\?\?\spublic/assets)" | egrep -v "##" | cut -c4- | egrep -v "commit_exception\.list|.rubocop_todo.yml|\.xls|\.lock|\.tutorial|\.dir_bash_history|\.vscode|\.idea|\.git|\.description|\.editorconfig|\.env.development|\.env-sample|\.gitignore|\.pryrc|\.rspec|\.ruby\-version|db/patch|bundles|\.rubocop_todo.yml|\.rubocop.yml|\.simplecov|\.temp_keys|\.csv|\.sh|\.bash|\.yml|\.gitignore|\.log|\.txt|\.key|\.crt|\.csr|\.idl|\.json|\.js|\.jpg|\.png|\.html|\.gif|\.feature|\.scss|\.css|\.haml|\.erb|\.otf|\.svg|\.ttf|\.tiff|\.woff|\.eot|\.editorconfig|\.markdown|\.headings")
   local ONE_FILE="" FILES="" FILES_TMP=""
   FILES_TMP="${FILES1}
@@ -474,7 +487,9 @@ ${ONE_FILE}"
   # // Only existing files - end
   echo "${FILES}"
   return 0
-}
+} # end find_files_from_this_branch_against
+
+
 function get_longest_line_number(){
   local FILES="${@}"
   FILES="${@}"
@@ -493,6 +508,8 @@ function get_longest_line_number(){
   echo ${FILE_LONGEST}
   return 0
 } # end get_longest_line_number
+
+
 function construct_title_rubocop(){
   local -i FILE_LONGEST=${1}
   local TITLE="  +----------${CYAN}Rubocop${PURPLE_BLUE}---${CYAN}checking${PURPLE_BLUE}---${CYAN}files${PURPLE_BLUE}-"
@@ -525,7 +542,9 @@ function repeat_char(){
   echo -e "${LINER}"
   return 0
 } # end repeat_char
-function construct_files_with_fillers (){
+
+
+function construct_files_with_fillers(){
   # A filler is §
   # Adding fillers looks like
   # test/workers/twilio_cleaner_worker_test.rb§§§§§§§§§§§§§§§§§
@@ -557,7 +576,9 @@ function output_fillers_to_stdout(){
   done <<< "${ALL_FILERS}"
   return 0
 }  # end output_fillers_to_stdout
-rubocop_testing() {
+
+
+rubocop_testing(){
   local _err=$?
   trap interrupt_rubocop INT
   local BRANCH=$(git_current_branch)
@@ -571,7 +592,22 @@ rubocop_testing() {
   echo -e "  +"
   echo -e "  +-- ${CYAN} Locating files that changes in this branch "
   echo -e "${PURPLE_BLUE}  +${GRAY241}"
-  local FILES="$(find_files_from_this_branch_against_master)"
+  local FILES=""
+  FILES="$(find_files_from_this_branch_against master)"
+	_err=$?
+ 	if [ ${_err} -gt 0 ] ; then
+	{
+		echo -e "${PURPLE_BLUE}  + ${CYAN}failed _err:${RED}$_err master branch${GRAY241}"
+	  FILES="$(find_files_from_this_branch_against main)"
+	  _err=$?
+ 	  if [ ${_err} -gt 0 ] ; then
+		{
+			echo -e "${PURPLE_BLUE}  + $LINENO ${CYAN}failed _err:${RED}$_err main branch${GRAY241}"
+      echo -e "${PURPLE_BLUE}  + ${RED} Master and Main branches not found"
+		}
+		fi
+ 	}
+	fi
 
 
   local -i NUMBER_LEN="${#FILES}"
@@ -605,10 +641,10 @@ rubocop_testing() {
     echo -e "${PURPLE_BLUE}  +${SPACER}+ "
     echo -e "~~+${SPACER}+~~${GRAY241}"
     # /// ----- rubocop group test --  start
-    (( DEBUG )) && echo "bundle exec rubocop -a "${FILES}
+    (( DEBUG )) && echo "bundle exec rubocop -A "${FILES}
     local RUBOCOP_RESULT BUNDLING
-    # bundle exec rubocop -a ${FILES} 2>&1 | tee "${RUBOCOP_RESULT}"
-    RUBOCOP_RESULT="$(bundle exec rubocop -a ${FILES} 2>&1)"
+    # bundle exec rubocop -A ${FILES} 2>&1 | tee "${RUBOCOP_RESULT}"
+    RUBOCOP_RESULT="$(bundle exec rubocop -A ${FILES} 2>&1)"
     _err=$?
     if [ ${_err} -gt 0 ] ; then
     {
@@ -624,16 +660,16 @@ rubocop_testing() {
           exit 1
         }
         fi
-        echo "bundle exec rubocop -a ${FILES}"
-        RUBOCOP_RESULT=$(bundle exec rubocop -a "${FILES}" 2>&1)
+        echo "bundle exec rubocop -A ${FILES}"
+        RUBOCOP_RESULT=$(bundle exec rubocop -A "${FILES}" 2>&1)
         _err=$?
         # /// ----- one line per line --  start
         for ONE_FILE in ${FILES}; do
         {
           [ -z "${ONE_FILE}" ] && continue
           [ -e "${ONE_FILE}" ] || continue
-          echo "bundle exec rubocop -a ${ONE_FILE}"
-          RUBOCOP_RESULT="$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)"
+          echo "bundle exec rubocop -A ${ONE_FILE}"
+          RUBOCOP_RESULT="$(bundle exec rubocop -A "${ONE_FILE}" 2>&1)"
           _err=$?
           if [ ${_err} -gt 0 ] ; then
           {
@@ -649,8 +685,8 @@ rubocop_testing() {
                 exit 1
               }
               fi
-              echo "bundle exec rubocop -a ${ONE_FILE}"
-              RUBOCOP_RESULT=$(bundle exec rubocop -a "${ONE_FILE}" 2>&1)
+              echo "bundle exec rubocop -A ${ONE_FILE}"
+              RUBOCOP_RESULT=$(bundle exec rubocop -A "${ONE_FILE}" 2>&1)
             }
             fi
           }
@@ -687,7 +723,7 @@ rubocop_testing() {
     fi
     # /// ----- rubocop group test --  end
 
-    #echo "${FILES}" | sort -n | uniq | xargs bundle exec rubocop -a
+    #echo "${FILES}" | sort -n | uniq | xargs bundle exec rubocop -A
     if [ ${_err} -gt 0 ] ;  then
     {
       echo -e "${PURPLE_BLUE}  + ${RED} Rubocop errors. Please fix  "
@@ -1009,7 +1045,23 @@ echo -e "  +"
 echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
 # check_requirements "${CHECK_REQUIREMENTS}"
 
-FILES="$(find_files_from_this_branch_against_master)"
+  FILES="$(find_files_from_this_branch_against master)"
+	_err=$?
+ 	if [ ${_err} -gt 0 ] ; then
+	{
+		echo -e "${PURPLE_BLUE}  + ${CYAN}failed _err:${RED}$_err master branch${GRAY241}"
+	  FILES="$(find_files_from_this_branch_against main)"
+	  _err=$?
+ 	  if [ ${_err} -gt 0 ] ; then
+		{
+			echo -e "${PURPLE_BLUE}  + $LINENO ${CYAN}failed _err:${RED}$_err main branch${GRAY241}"
+      echo -e "${PURPLE_BLUE}  + ${RED} Master and Main branches not found"
+		}
+		fi
+ 	}
+	fi
+
+
  if [[ -n "${1}" ]] ; then
   {
     FILES="${@}"
