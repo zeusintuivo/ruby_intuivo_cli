@@ -452,12 +452,14 @@ OBSERVE='no'
 [[ "${*}" == *"--observe"* ]] && OBSERVE='yes'
 
 
-find_files_from_this_branch_against(){
+journal_get_target_branch_against(){
+  # repated in journal_intuivo_cli/journal_get_target_branch_against journal_get_target_branch_against
 	# trap '{ echo -e "${PURPLE_BLUE}  + ${GRAY241} Branch ${_against} ${RED}NOT ${GRAY241}found "; return 130; }' ERR
 	local _against="${1}"
 	if [[ -n "${_against:-}" ]] && [ $(git branch --list "${_against}") ] ; then
 	{
-		echo -e "\nfind_files_from_this_branch_against${PURPLE_BLUE}  + ${GRAY241} Branch ${_against} found "
+    _against="${1}"
+		# echo -e "\njournal_get_target_branch_against${PURPLE_BLUE}  + ${GRAY241} Branch ${_against} found "
 	}
   else
 	{
@@ -487,7 +489,7 @@ ${ONE_FILE}"
   # // Only existing files - end
   echo "${FILES}"
   return 0
-} # end find_files_from_this_branch_against
+} # end journal_get_target_branch_against
 
 
 function get_longest_line_number(){
@@ -565,6 +567,8 @@ ${ONE_FILLER}"
   echo -n "${ALL_FILLERS}"
   return 0
 } # end construct_files_with_fillers
+
+
 function output_fillers_to_stdout(){
   local ONE_FILLER=""
   local ALL_FILERS="${@}"
@@ -578,7 +582,33 @@ function output_fillers_to_stdout(){
 }  # end output_fillers_to_stdout
 
 
+# Function to try getting target branch against a specified branch
+try_get_target_branch() {
+  local branch=$1
+  FILES="$(journal_get_target_branch_against "$branch")"
+  _err=$?
+
+  # Check for errors and print messages
+  if [ ${_err} -gt 0 ]; then
+    echo -e "${PURPLE_BLUE}  + $LINENO ${CYAN}failed _err:${RED}$_err ${branch} branch${GRAY241}"
+  fi
+
+  return $_err
+}
+
+# Initialize FILES to an empty string
+FILES=""
+
+# Try getting target branch against 'master', then 'main' if the former fails
+if ! try_get_target_branch "master"; then
+  if ! try_get_target_branch "main"; then
+    echo -e "${PURPLE_BLUE}  + ${RED} Master and Main branches not found"
+  fi
+fi
+
+
 rubocop_testing(){
+  DEBUG=1
   local _err=$?
   trap interrupt_rubocop INT
   local BRANCH=$(git_current_branch)
@@ -593,12 +623,12 @@ rubocop_testing(){
   echo -e "  +-- ${CYAN} Locating files that changes in this branch "
   echo -e "${PURPLE_BLUE}  +${GRAY241}"
   local FILES=""
-  FILES="$(find_files_from_this_branch_against master)"
+  FILES="$(journal_get_target_branch_against master)"
 	_err=$?
  	if [ ${_err} -gt 0 ] ; then
 	{
 		echo -e "${PURPLE_BLUE}  + ${CYAN}failed _err:${RED}$_err master branch${GRAY241}"
-	  FILES="$(find_files_from_this_branch_against main)"
+	  FILES="$(journal_get_target_branch_against main)"
 	  _err=$?
  	  if [ ${_err} -gt 0 ] ; then
 		{
@@ -650,7 +680,7 @@ rubocop_testing(){
     {
       if [[ -n "${RUBOCOP_RESULT}" ]] && [[ "${RUBOCOP_RESULT}" != *"could not find"* ]]; then
       {
-        echo -e "  ${RED}+${YELLOW220} ${RUBOCOP_RESULT} ${RED}+ FAILED first attempt to run rubocop ... Attempting to bundle"
+        echo -e "  ${RED}+${YELLOW220} $LINENO ${RUBOCOP_RESULT} ${RED}+ FAILED first attempt to run rubocop .F.. Attempting to bundle"
         BUNDLING="$(bundle  2>&1)"
         _err=$?
         if [ ${_err} -gt 0 ] ; then
@@ -675,7 +705,7 @@ rubocop_testing(){
           {
             if [[ -n "${RUBOCOP_RESULT}" ]] && [[ "${RUBOCOP_RESULT}" != *"could not find"* ]]; then
             {
-              echo -e "  ${RED}+${YELLOW220} ${RUBOCOP_RESULT} ${RED}+ FAILED first attempt to run rubocop ... Attempting to bundle"
+              echo -e "  ${RED}+${YELLOW220} $LINENO ${RUBOCOP_RESULT} ${RED}+ FAILED first attempt to run rubocop ..F. Attempting to bundle"
               BUNDLING="$(bundle  2>&1)"
               _err=$?
               if [ ${_err} -gt 0 ] ; then
@@ -744,11 +774,16 @@ rubocop_testing(){
 rubocop_testing
 
 ruby_audit_i18n_tasks_test(){
-  if ! command -v i18n-tasks >/dev/null 2>&1  ; then
+  # ( command -v i18n-tasks >/dev/null 2>&1 ) && found=1
+  #  ( ! bundle info i18n-tasks   >/dev/null 2>&1  ) && echo "not"
+  if ( ! bundle info i18n-tasks   >/dev/null 2>&1  ) ; then
   {
     echo -e "  ${RED}+${YELLOW220} i18n-tasks ${RED}+ NOT FOUND ...${PURPLE}  Attempting to install and add to bundle"
-    gem install i18n-tasks
-    bundle add i18n-tasks
+    echo -e "  ${RED}+${YELLOW220} i18n-tasks ${RED}+ skipping ${YELLOW220}...."
+    echo -e " NOTE:TODO:NOTE TO SELF: PERHAPS ADD yes_no TO attempt to install" 
+    return 0
+    # gem install i18n-tasks
+    # bundle add i18n-tasks
   }
   fi
   RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  bundle exec   i18n-tasks missing
@@ -1045,30 +1080,61 @@ echo -e "  +"
 echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
 # check_requirements "${CHECK_REQUIREMENTS}"
 
-  FILES="$(find_files_from_this_branch_against master)"
-	_err=$?
- 	if [ ${_err} -gt 0 ] ; then
-	{
-		echo -e "${PURPLE_BLUE}  + ${CYAN}failed _err:${RED}$_err master branch${GRAY241}"
-	  FILES="$(find_files_from_this_branch_against main)"
-	  _err=$?
- 	  if [ ${_err} -gt 0 ] ; then
-		{
-			echo -e "${PURPLE_BLUE}  + $LINENO ${CYAN}failed _err:${RED}$_err main branch${GRAY241}"
-      echo -e "${PURPLE_BLUE}  + ${RED} Master and Main branches not found"
-		}
-		fi
- 	}
-	fi
+  # FILES="$(journal_get_target_branch_against master)"
+	# _err=$?
+ 	# if [ ${_err} -gt 0 ] ; then
+	# {
+	# 	echo -e "${PURPLE_BLUE}  + ${CYAN}failed _err:${RED}$_err master branch${GRAY241}"
+	#   FILES="$(journal_get_target_branch_against main)"
+	#   _err=$?
+ 	#   if [ ${_err} -gt 0 ] ; then
+	# 	{
+	# 		echo -e "${PURPLE_BLUE}  + $LINENO ${CYAN}failed _err:${RED}$_err main branch${GRAY241}"
+  #     echo -e "${PURPLE_BLUE}  + ${RED} Master and Main branches not found"
+	# 	}
+	# 	fi
+ 	# }
+	# fi
 
-
- if [[ -n "${1}" ]] ; then
+function _filter_files_test_rpec_feaure_only(){
+  # $(egrep "^test|^spec|^feature|_test\.rb|_spec\.rb|\.feature" <<< ${one})"
+  local _all_test_files=""
+  local _files="${@:1}"
+  local _one=""
+  while read -r _one; do
   {
-    FILES="${@}"
+    [[ -z "${_one}" ]] && continue
+    [[ ! -e "${_one}" ]] && continue
+    [[ "${one}" !=  *"_test.rb" ]] \
+    || [[ "${one}" ==  *"_spec.rb" ]] \
+    || [[ "${one}" ==  *".feature" ]] && continue
+    _all_test_files="${_all_test_files}
+${_one}"
   }
-  fi
-FILES="$(echo "${FILES}" | egrep "^test|^spec|^feature|_test\.rb|_spec\.rb|\.feature")"
-# echo FILES:${FILES}
+  done <<< "${_files}"
+  # we want simple check and not quotations to ignoee white spaces
+  [ -z  ${_all_test_files} ] && return 1
+
+  echo -n "${_all_test_files}"
+  return 0
+} # end _filter_files_test_rpec_feaure_only
+
+
+echo About to test FILES:${FILES}:
+
+
+# given only tests manually ?
+if [[ -n "${1:-}" ]] ; then
+{
+  FILES="${@}"
+}
+fi
+
+
+
+FILES="$(_filter_files_test_rpec_feaure_only "${FILES}")"
+echo About to test FILES:${FILES}
+exit 0
 # [[ "${*}" == *"--observe"* ]] && OBSERVE='yes'
 DOALLTESTS='yes'
 [[ -n "${FILES}" ]] && DOALLTESTS='no'
