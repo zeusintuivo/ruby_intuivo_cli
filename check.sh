@@ -1130,11 +1130,16 @@ if [[ -n "${1:-}" ]] ; then
 }
 fi
 
-
+ 
 
 FILES="$(_filter_files_test_rpec_feaure_only "${FILES}")"
-echo About to test FILES:${FILES}
-exit 0
+   echo -e "${PURPLE_BLUE}+-+"
+   echo -e "  +"
+   echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
+   echo About to test FILES:${FILES}
+   if [ -n ${FILES:-} ] ; then
+    echo -e "${YELLOW220} Pretest: ${CYAN} Nothing to test "
+   fi
 # [[ "${*}" == *"--observe"* ]] && OBSERVE='yes'
 DOALLTESTS='yes'
 [[ -n "${FILES}" ]] && DOALLTESTS='no'
