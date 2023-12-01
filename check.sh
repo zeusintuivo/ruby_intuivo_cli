@@ -811,11 +811,13 @@ ruby_audit_i18n_tasks_test
 
 ruby_audit_advisory_test(){
   # if ! command -v bundle-audit >/dev/null 2>&1  ; then
+  local -i added=0
   if ( ! bundle info bundle-audit   >/dev/null 2>&1  ) ; then
   {
     echo -e "  ${RED}+${YELLOW220} bundle-audit ${RED}+ NOT FOUND ...${PURPLE}  Attempting to install and add to bundle"
     gem install bundle-audit
     bundle add bundle-audit
+    added=1
   }
   fi
   bundle info bundle-audit
@@ -823,19 +825,23 @@ ruby_audit_advisory_test(){
   if [ ${_err} -eq 7 ] ;  then
   {
     echo -e "  ${RED}+${YELLOW220} bundle-audit ${RED}+ not Gemfile ...${PURPLE}  Attempting add to bundle"
+    gem install bundle-audit
     bundle add bundle-audit
+    added=1
   }
   fi
   RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  bundle exec bundle-audit check --update --ignore CVE-2015-9284 CVE-2019-25025
   _err=$?
   if [ ${_err} -gt 0 ] ;  then
   {
+    [ ${added} -gt 0 ] && git checkout Gemfile Gemfile.lock
     echo -e "${PURPLE_BLUE}  + ${RED} Ruby Audit Advisory errors. Please fix  "
     echo -e "${PURPLE_BLUE}  + ${CYAN}"
     echo -e "${PURPLE_BLUE}  + ${CYAN}"
     exit 130;
   }
   fi
+  [ ${added} -gt 0 ] && git checkout Gemfile Gemfile.lock
 }
 ruby_audit_advisory_test
 
