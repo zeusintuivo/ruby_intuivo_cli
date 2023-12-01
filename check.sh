@@ -810,7 +810,8 @@ ruby_audit_i18n_tasks_test(){
 ruby_audit_i18n_tasks_test
 
 ruby_audit_advisory_test(){
-  if ! command -v bundle-audit >/dev/null 2>&1  ; then
+  # if ! command -v bundle-audit >/dev/null 2>&1  ; then
+  if ( ! bundle info bundle-audit   >/dev/null 2>&1  ) ; then
   {
     echo -e "  ${RED}+${YELLOW220} bundle-audit ${RED}+ NOT FOUND ...${PURPLE}  Attempting to install and add to bundle"
     gem install bundle-audit
