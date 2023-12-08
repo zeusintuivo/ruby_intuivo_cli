@@ -449,7 +449,11 @@ interrupt_cucumbers() {
 
 
 OBSERVE='no'
+ONLY_RUBOCOP='no'
 [[ "${*}" == *"--observe"* ]] && OBSERVE='yes'
+[[ "${*}" == *"--rubocop"* ]] && ONLY_RUBOCOP='yes'
+[[ "${*}" == *"--only-rubocop"* ]] && ONLY_RUBOCOP='yes'
+
 
 
 journal_get_target_branch_against(){
@@ -772,6 +776,11 @@ rubocop_testing(){
 
 } # end rubocop_testing
 rubocop_testing
+if [[ "${ONLY_RUBOCOP}" == 'yes' ]] ; then
+{
+  exit 0
+}
+fi
 
 ruby_audit_i18n_tasks_test(){
   # ( command -v i18n-tasks >/dev/null 2>&1 ) && found=1
@@ -811,37 +820,69 @@ ruby_audit_i18n_tasks_test
 
 ruby_audit_advisory_test(){
   # if ! command -v bundle-audit >/dev/null 2>&1  ; then
-  local -i added=0
-  if ( ! bundle info bundle-audit   >/dev/null 2>&1  ) ; then
+  local -i _added=0
+  local -i _found=0
+  local _auditors="
+  bundler-audit|gem install bundler-audit|bundle add bundler-audit|bundle exec bundler-audit check --update
+  bundle-audit|gem install bundle-audit|bundle add bundle-audit|bundle exec bundle-audit check --update
+  "
+  local _name_auditer=bundler-audit
+  local _one
+  local _name=""
+  local _gem_install=""
+  local _bundle_add_install=""
+  local _audit_run=""
+  while read -r _one ; do 
   {
-    echo -e "  ${RED}+${YELLOW220} bundle-audit ${RED}+ NOT FOUND ...${PURPLE}  Attempting to install and add to bundle"
-    gem install bundle-audit
-    bundle add bundle-audit
-    added=1
+    [[ -z "${_one}" ]] && continue
+    _name_auditer=$(cut -d'|' -f1 <<< "${_one}" )
+    _gem_install=$(cut -d'|' -f2 <<< "${_one}" )
+    _bundle_add_install=$(cut -d'|' -f3 <<< "${_one}" )
+    _audit_run=$(cut -d'|' -f4 <<< "${_one}" )
+    [[ -z "${_name_auditer}" ]] && continue
+    if ( ! bundle info "${_name_auditer}"   >/dev/null 2>&1  ) ; then
+    {
+      echo -e "  ${RED}+${YELLOW220} "${_name_auditer}" ${RED}+ NOT FOUND ...${PURPLE}  Attempting to install  ${_name_auditer}  and add to bundle"
+      ${_gem_install}
+      ${_bundle_add_install}
+    }
+    fi
+    bundle info "${_name_auditer}"
+    _err=$?
+    if [ ${_err} -eq 7 ] ;  then
+    {
+      echo -e "  ${RED}+${YELLOW220} bundle-audit ${RED}+ not Gemfile ...${PURPLE}  Attempting add to bundle again  ${_name_auditer} "
+      ${_gem_install}
+      ${_bundle_add_install}
+    }
+    fi
+    if [ ${_err} -eq 0 ] ;  then
+    {
+      _found=1
+      _added=1
+    }
+    fi
+  } 
+  done <<< "${auditors}"
+  if [ ${_found} -eq 1 ] ; then
+  {
+
+    # RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  bundle exec bundle-audit check --update --ignore CVE-2015-9284 CVE-2019-25025
+    echo "RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  ${_audit_run} --ignore CVE-2015-9284 CVE-2019-25025"
+    RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  ${_audit_run} --ignore CVE-2015-9284 CVE-2019-25025
+    _err=$?
   }
   fi
-  bundle info bundle-audit
-  _err=$?
-  if [ ${_err} -eq 7 ] ;  then
-  {
-    echo -e "  ${RED}+${YELLOW220} bundle-audit ${RED}+ not Gemfile ...${PURPLE}  Attempting add to bundle"
-    gem install bundle-audit
-    bundle add bundle-audit
-    added=1
-  }
-  fi
-  RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  bundle exec bundle-audit check --update --ignore CVE-2015-9284 CVE-2019-25025
-  _err=$?
   if [ ${_err} -gt 0 ] ;  then
   {
-    [ ${added} -gt 0 ] && git checkout Gemfile Gemfile.lock
+    [ ${_added} -gt 0 ] && git checkout Gemfile Gemfile.lock
     echo -e "${PURPLE_BLUE}  + ${RED} Ruby Audit Advisory errors. Please fix  "
     echo -e "${PURPLE_BLUE}  + ${CYAN}"
     echo -e "${PURPLE_BLUE}  + ${CYAN}"
     exit 130;
   }
   fi
-  [ ${added} -gt 0 ] && git checkout Gemfile Gemfile.lock
+  [ ${_added} -gt 0 ] && git checkout Gemfile Gemfile.lock
 }
 ruby_audit_advisory_test
 
@@ -877,7 +918,7 @@ find_location_rake_lib() {
   else
   {
     (( DEBUG )) &&  echo -e "${YELLOW220} updatedb: ${CYAN}  "
-    command -v updatedb >/dev/null 2>&1  && sudo -u root -i --  sudo updatedb
+    command -v updatedb >/dev/null 2>&1  && sudo -u root -i --  sudo updatedb &
     # THIS_RUBY_VERSION=$(ruby --version  | cut -d' ' -f2 | cut -d'p' -f1)
     # Then get folder based on ruby version 2.2.5 and rake version 10.5.0 used for development
     local rake_variable_lib_folder=$(locate test_loader.rb | grep "rake-*.*.*/lib" | grep "ruby-${ruby_version}" | grep "rake-${rake_version}" | head -1 )  # RVM Type environment
@@ -1199,37 +1240,31 @@ ${ALL_SPECSRB}"
     INTEGRATION_TEST_FILES_NOT_FOUND=""
     while read -r ONE_FILE; do
     {
-      if [[ -n "${ONE_FILE}" ]] ; then
+      [[ -z "${ONE_FILE}" ]] && continue
+      if [[ ! -f "${ONE_FILE}" ]] ; then
       {
-        if [[ -f "${ONE_FILE}" ]] ; then
-        {
-
-          if [[ -z "${INTEGRATION_TESTS_EXISTS}" ]] ; then
-          {
-            INTEGRATION_TESTS_EXISTS="\"${ONE_FILE}\""
-          }
-          else
-          {
-            INTEGRATION_TESTS_EXISTS="${INTEGRATION_TESTS_EXISTS} \"${ONE_FILE}\""
-          }
-          fi
-
-          #phantomjs is required
-          if [[ -n $(cat "${ONE_FILE}" | grep "visit") ]] ; then
-          {
-            PHANTOM_IS_REQUIRED=1
-            PHANTOM_IS_REQUIRED_BY="${PHANTOM_IS_REQUIRED_BY}
+        INTEGRATION_TEST_FILES_NOT_FOUND="${INTEGRATION_TEST_FILES_NOT_FOUND}
 ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
-          }
-          fi
-        }
-        else
-        {
-          INTEGRATION_TEST_FILES_NOT_FOUND="${INTEGRATION_TEST_FILES_NOT_FOUND}
-${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
-        }
-        fi
+        continue
+      }
+      fi
 
+      if [[ -z "${INTEGRATION_TESTS_EXISTS}" ]] ; then
+      {
+        INTEGRATION_TESTS_EXISTS="\"${ONE_FILE}\""
+      }
+      else
+      {
+        INTEGRATION_TESTS_EXISTS="${INTEGRATION_TESTS_EXISTS} \"${ONE_FILE}\""
+      }
+      fi
+
+      #phantomjs is required
+      if [[ -n $(grep "visit" < "${ONE_FILE}" ) ]] ; then
+      {
+        PHANTOM_IS_REQUIRED=1
+        PHANTOM_IS_REQUIRED_BY="${PHANTOM_IS_REQUIRED_BY}
+${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
       }
       fi
     }
@@ -1275,13 +1310,16 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
     echo -e "${PURPLE_BLUE}  + ${RESET}"
     #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb"
     # eval " bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml " ${INTEGRATION_TESTS_EXISTS}
-    if command -v rspec >/dev/null 2>&1; then
+    # if command -v rspec >/dev/null 2>&1; then
+    if ( bundle info rspec   >/dev/null 2>&1  ) ; then
+    {
       if [[ "${INTEGRATION_TESTS_EXISTS}" == *"_spec.rb"* ]] ; then
       {
         echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN} bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
         RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml
       }
       fi
+    }
     fi
     echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN} bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
     eval "RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${INTEGRATION_TESTS_EXISTS}
@@ -1314,24 +1352,21 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
       while read -r ONE_FILE; do
       {
         [[ -z "${ONE_FILE}" ]] && continue
-        if [ -f "${ONE_FILE}" ] ; then
+        if [[ ! -f "${ONE_FILE}" ]] ; then
         {
-          if [ -z "${CUCUMBER_TESTS_EXISTS}" ] ; then
-          {
-            CUCUMBER_TESTS_EXISTS="'${ONE_FILE}'"
-          }
-          else
-          {
-            CUCUMBER_TESTS_EXISTS="${CUCUMBER_TESTS_EXISTS} '${ONE_FILE}'"
-          }
-          fi
-        }
-        else
-        {
-            CUCUMBER_TEST_FILES_NOT_FOUND="${CUCUMBER_TEST_FILES_NOT_FOUND}
+          CUCUMBER_TEST_FILES_NOT_FOUND="${CUCUMBER_TEST_FILES_NOT_FOUND}
 ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
+          continue
         }
         fi
+        if [[ -z "${CUCUMBER_TESTS_EXISTS}" ]] ; then
+        {
+          CUCUMBER_TESTS_EXISTS="'${ONE_FILE}'"
+          continue
+        }
+        fi
+        CUCUMBER_TESTS_EXISTS="${CUCUMBER_TESTS_EXISTS} '${ONE_FILE}'"
+
     }
     done <<< "${ALL_CUCUMBER_TESTS}"
 
@@ -1445,7 +1480,8 @@ ${ALL_SPECSRB}"
 
       if [[ -n "${ALL_SPECSRB}" ]] ; then
       {
-        if command -v rspec >/dev/null 2>&1; then
+        # if command -v rspec >/dev/null 2>&1; then
+        if ( bundle info rspec   >/dev/null 2>&1  ) ; then
         {
           trap interrupt_rspec INT
           local -i _specs_count="${#ALL_SPECSRB}"
@@ -1485,18 +1521,15 @@ ${ALL_SPECSRB}"
                 echo -e "${PURPLE_BLUE}  + ${CYAN}_related_filename${RED}:${YELLOW220}${_related_filename}"
                 echo -e "${PURPLE_BLUE}  + ${CYAN}          running${RED}:${YELLOW220}find . | ag --nocolor "/.*${_related_filename}[^/]*$" | trim_start_space | sed 's/../  /'"
                 _file_findings=$(find . | ag --nocolor "/.*${_related_filename}[^/]*$" | trim_start_space | sed 's/^\../  /g')
-                if [[ -n "${_file_findings}" ]] ; then
+                [[ -z "${_file_findings}" ]] && continue
+                for _one_file in ${_file_findings}; do
                 {
-                  for _one_file in ${_file_findings}; do
-                  {
-                    [[ -z "${_one_file}" ]] && continue
-                    [[ ! -f "${_one_file}" ]] && continue
-                    echo -e "${GREEN}  + ${YELLOW220}:  ${CYAN}         found${RED}:${YELLOW220}${_one_file}"
-                    _observing_files="${_observing_files}  --watch ${_one_file} "
-                  }
-                  done
+                  [[ -z "${_one_file}" ]] && continue
+                  [[ ! -f "${_one_file}" ]] && continue
+                  echo -e "${GREEN}  + ${YELLOW220}:  ${CYAN}         found${RED}:${YELLOW220}${_one_file}"
+                  _observing_files="${_observing_files}  --watch ${_one_file} "
                 }
-                fi
+                done
               }
               done <<< "${ALL_SPECSRB}"
 
@@ -1512,7 +1545,7 @@ ${ALL_SPECSRB}"
             }
             fi
           }
-          else
+          else # else OBSERVE
           {
             echo -e "${PURPLE_BLUE}  + "
             echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} Rspec"
@@ -1527,11 +1560,11 @@ ${ALL_SPECSRB}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
           }
-          fi
+          fi  # end OBSERVE
         }
-        fi
+        fi # end bundle info rspec 
       }
-      fi
+      fi # end ALL_SPECSRB
     }
     else
     {
