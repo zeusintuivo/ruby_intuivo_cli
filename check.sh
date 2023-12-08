@@ -776,6 +776,7 @@ rubocop_testing(){
     echo -e "  +${SPACER}+ "
   }
   fi
+  LINER="$(repeat_char "80" "-")"
   echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
 
 
