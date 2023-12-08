@@ -3,6 +3,12 @@
 # @author Zeus Intuivo <zeus@intuivo.com>
 #
 #
+
+set -u 
+# REQUIRED FOR strcuttesting start
+export USER_HOME="${HOME}"
+export DEBUG=0
+# REQUIRED FOR strcuttesting end
 typeset -i CPU_COUNT=1
 if ( ! command -v nproc >/dev/null 2>&1; ) ; then {
   CPU_COUNT="$(nproc)"  # Linux
@@ -31,19 +37,19 @@ function trim_start_space() {
 }
 
 function load_global_colors(){
-  [[ -z "${BLACK}" ]] && BLACK="\\033[38;5;16m"
-  [[ -z "${BRIGHT_BLUE87}" ]] && BRIGHT_BLUE87="\\033[38;5;87m"
-  [[ -z "${CYAN}" ]] && CYAN="\\033[38;5;123m"
-  [[ -z "${GRAY241}" ]] && GRAY241="\\033[38;5;241m"
-  [[ -z "${GREEN}" ]] && GREEN="\\033[38;5;22m"
-  [[ -z "${PURPLE_BLUE}" ]] && PURPLE_BLUE="\\033[38;5;93m"
-  [[ -z "${PURPLE}" ]] && PURPLE="\\033[01;35m"
-  [[ -z "${RED}" ]] && RED="\\033[38;5;1m"
-  [[ -z "${RESET_PROMPT}" ]] && RESET_PROMPT="[0m"
-  [[ -z "${RESET}" ]] && RESET="\\033[0m"
-  [[ -z "${YELLOW220}" ]] && YELLOW220="\\033[38;5;220m"
-  [[ -z "${YELLOW226}" ]] && YELLOW226="\\033[38;5;226m"
-  [[ -z "${YELLOW}" ]] && YELLOW="\\033[01;33m"
+  [[ -z "${BLACK-}" ]] && BLACK="\\033[38;5;16m"
+  [[ -z "${BRIGHT_BLUE87-}" ]] && BRIGHT_BLUE87="\\033[38;5;87m"
+  [[ -z "${CYAN-}" ]] && CYAN="\\033[38;5;123m"
+  [[ -z "${GRAY241-}" ]] && GRAY241="\\033[38;5;241m"
+  [[ -z "${GREEN-}" ]] && GREEN="\\033[38;5;22m"
+  [[ -z "${PURPLE_BLUE-}" ]] && PURPLE_BLUE="\\033[38;5;93m"
+  [[ -z "${PURPLE-}" ]] && PURPLE="\\033[01;35m"
+  [[ -z "${RED-}" ]] && RED="\\033[38;5;1m"
+  [[ -z "${RESET_PROMPT-}" ]] && RESET_PROMPT="[0m"
+  [[ -z "${RESET-}" ]] && RESET="\\033[0m"
+  [[ -z "${YELLOW220-}" ]] && YELLOW220="\\033[38;5;220m"
+  [[ -z "${YELLOW226-}" ]] && YELLOW226="\\033[38;5;226m"
+  [[ -z "${YELLOW-}" ]] && YELLOW="\\033[01;33m"
 } # end load_global_colors
 load_global_colors
 load_temp_keys() {
