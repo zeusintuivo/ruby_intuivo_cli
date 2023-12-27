@@ -457,10 +457,11 @@ interrupt_cucumbers() {
 
 OBSERVE='no'
 ONLY_RUBOCOP='no'
+SKIP_AUDIT='no'
 [[ "${*}" == *"--observe"* ]] && OBSERVE='yes'
 [[ "${*}" == *"--rubocop"* ]] && ONLY_RUBOCOP='yes'
 [[ "${*}" == *"--only-rubocop"* ]] && ONLY_RUBOCOP='yes'
-
+[[ "${*}" == *"--skip-audit"* ]] && SKIP_AUDIT='yes'
 
 
 journal_get_target_branch_against(){
@@ -827,7 +828,16 @@ ruby_audit_i18n_tasks_test(){
   }
   fi
 }
-ruby_audit_i18n_tasks_test
+if [[ "${SKIP_AUDIT}" == 'yes' ]] ; then
+{
+  echo "--skip-audit Skipping ruby_audit_i18n_tasks_test"
+}
+else
+{
+  ruby_audit_i18n_tasks_test
+}
+fi
+
 
 ruby_audit_advisory_test(){
   # if ! command -v bundle-audit >/dev/null 2>&1  ; then
@@ -895,7 +905,16 @@ ruby_audit_advisory_test(){
   fi
   [ ${_added} -gt 0 ] && git checkout Gemfile Gemfile.lock
 }
-ruby_audit_advisory_test
+if [[ "${SKIP_AUDIT}" == 'yes' ]] ; then
+{
+  echo "--skip-audit Skipping ruby_audit_advisory_test"
+}
+else
+{
+  ruby_audit_advisory_test
+}
+fi
+
 
 extract_version(){
   sed -nre 's/^[^0-9]*(([0-9]+\.)*[0-9]+).*/\1/p'
@@ -1004,7 +1023,7 @@ rake_lib_folder() {
               RAKE_EXECUTABLE="\"${LOCATION_RAKE_LIB}\" \"${LOCATION_RAKE_LIB}/rake/rake_test_loader.rb\""
 RAKE_EXECUTABLE=$(echo "${RAKE_EXECUTABLE}" | sed 's/" /"/g' )
               # ALL THE TESTS
-              #ruby -I\"lib:test\" -I\"${RAKE_LIB_FiOLDER}\"                               \"${LOCATION_RAKE_LIB}\"  "                                              ${INTEGRATION_TESTS_EXISTS}
+              #ruby -I\"lib:test\" -I\"${RAKE_LIB_FiOLDER}\"                               \"${LOCATION_RAKE_LIB}\"  "                                              ${_integration_tests_exists}
               #ruby -I"lib:test" -I"$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "$HOME/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb"
 
               # Email
@@ -1157,63 +1176,111 @@ echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
  	# }
 	# fi
 
-function _filter_files_test_rpec_feaure_only(){
+function _filter_files_test_rpec_feaure_only() {
   # $(egrep "^test|^spec|^feature|_test\.rb|_spec\.rb|\.feature" <<< ${one})"
   local _all_test_files=""
-  local _files="${@:1}"
+  local _files="${@}"
   local _one=""
   while read -r _one; do
   {
-    [[ -z "${_one}" ]] && continue
+    [[   -z "${_one}" ]] && continue
     [[ ! -e "${_one}" ]] && continue
-    [[ "${one}" !=  *"_test.rb" ]] \
-    || [[ "${one}" ==  *"_spec.rb" ]] \
-    || [[ "${one}" ==  *".feature" ]] && continue
-    _all_test_files="${_all_test_files}
+    ( grep -q "_test.rb[[:space:]]*$"  <<< "${_one}" ) \
+    || ( grep -q "_spec.rb[[:space:]]*$"  <<< "${_one}" ) \
+    || ( grep -q ".feature[[:space:]]*$"  <<< "${_one}" ) && _all_test_files="${_all_test_files}
 ${_one}"
   }
   done <<< "${_files}"
   # we want simple check and not quotations to ignoee white spaces
-  [ -z  ${_all_test_files} ] && return 1
+  [[ -z "${_all_test_files}" ]] && return 1
 
   echo -n "${_all_test_files}"
   return 0
 } # end _filter_files_test_rpec_feaure_only
 
 
-echo About to test FILES:${FILES}:
+  # function _priorities_passed_files_diff_all() {
+  echo "global FILES"
+  echo "global DIFFFILES"
+  echo "global DOALLTESTS"
+  DOALLTESTS='yes'
+  echo About to test FILES:${FILES}:
+  DIFFFILES="${FILES}"              # array ?
+  echo "Backup FILES DIFFFILES:${DIFFFILES}:"
+  [[ -n "${1:-}" ]] && FILES="${@}" # array ? expecting a list of files with spaces
+  [[ -n "${1:-}" ]] && echo -en "${0}:${LINENO} I think I got something to test::${1:-}:: About to test FILES::${FILES}:: "
+  [[ -n "${1:-}" ]] && DOALLTESTS='no'  # do not do all tests because "I have some"
+
+    # Priorities:
+    # 1. Passed Files
+    # 2. Git diff files - TODO implement file search of classes names like in observe - TODO also expand that to also search filenames like "property_advisor" instead of only class names
+    # 3. Search all files
+
+  # } # end _priorities_passed_files_diff_all
 
 
-# given only tests manually ?
-if [[ -n "${1:-}" ]] ; then
-{
-  FILES="${@}"
-}
-fi
+  # _counter=0
+  # while  [[ "${DOALLTESTS}" == 'no' ]] ; do
+  # {
+  #   (( _counter++ ))
+  # }
+  # done # end while
 
+  echo " "
+  echo -en "${0}:${LINENO} ..mm checking again arriving files "
+  [[ -z "${LINER-}" ]] && LINER="$(repeat_char "80" "-")"
+  FILES="$(_filter_files_test_rpec_feaure_only "${FILES}")"
+  # echo "FILES:${FILES}:"
+  # echo "Backup FILES DIFFFILES:${DIFFFILES}:"
+  echo " "
+  echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
+  echo -e "  +"
+  echo -e "${PURPLE_BLUE}+-+ ${GRAY241}"
 
-
-[[ -z "${LINER-}" ]] && LINER="$(repeat_char "80" "-")"
-FILES="$(_filter_files_test_rpec_feaure_only "${FILES}")"
-   echo -e "${PURPLE_BLUE}+-+"
-   echo -e "  +"
-   echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
-   echo About to test FILES:${FILES}
-   if [ -n ${FILES:-} ] ; then
+  if [[ -n "${FILES:-}" ]] ; then  # if not empty, I have file passed Priority 1
+  {
+    echo '# if not empty, I have file passed Priority 1'
+    echo About to test FILES:${FILES}
     echo -e "${YELLOW220} Pretest: ${CYAN} Nothing to test "
-   fi
-# [[ "${*}" == *"--observe"* ]] && OBSERVE='yes'
-DOALLTESTS='yes'
-[[ -n "${FILES}" ]] && DOALLTESTS='no'
-# echo DOALLTESTS:${DOALLTESTS}
-if [[ "${DOALLTESTS}" == 'yes' ]] ; then
+    DOALLTESTS='no'
+  }
+  else # if empty, else check priority 2
+  {
+    echo '# if empty, else check priority 2'
+    if [[ -n "${DIFFFILES:-}" ]] ; then
+    {
+      echo  '# if empty, else check priority 2 DIFFFILES'
+      echo "DIFFFILES:${DIFFFILES}"
+      FILES="$(_filter_files_test_rpec_feaure_only "${DIFFFILES}" )"
+      echo "_filter_files_test_rpec_feaure_only return:${FILES}:"
+      # [[ "${*}" == *"--observe"* ]] && OBSERVE='yes'
+      if [[ -n "${FILES:-}" ]] ; then  # if not empty, I have file passed Priority 2
+      {
+        echo ' # if not empty, I have file passed Priority 2'
+        DOALLTESTS='no'
+      }
+      else # if empty, else check priority 2
+      {
+        echo ' # if empty, else check priority 2 '
+        DOALLTESTS='yes' # trigger Priority 3
+        echo ' # trigger Priority 3'
+        # exit 0
+      }
+      fi
+    }
+    fi
+  }
+  fi
+
+
+if [[ "${DOALLTESTS}" == 'yes' ]] ; then   # trigger Priority 3
 {
   echo " "
-  echo -e "${YELLOW220} STAGE 4-A: ${CYAN} Testing all files hence ... no tests were passed to test"
+  echo -e "${YELLOW220} STAGE 4-A: ${CYAN} Testing all files hence ... no tests were passed to test  DOALLTESTS=yes"
   echo -e "${PURPLE_BLUE}+-+"
   echo -e "  +"
-
-[[ -z "${LINER-}" ]] && LINER="$(repeat_char "80" "-")"
+  # exit 0
+  [[ -z "${LINER-}" ]] && LINER="$(repeat_char "80" "-")"
   echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
 
   integrations_testing() {
@@ -1250,37 +1317,38 @@ ${ALL_SPECSRB}"
   #services/place_service/tests/address_serializer_test.rb"
 
 
-    INTEGRATION_TESTS_EXISTS=""
-    PHANTOM_IS_REQUIRED=0
-    PHANTOM_IS_REQUIRED_BY=""
-    INTEGRATION_TEST_FILES_NOT_FOUND=""
-    while read -r ONE_FILE; do
+    local _integration_tests_exists=""
+    local -i _phatom_is_required=0
+    local _phanton_is_required_by=""
+    local _integration_test_files_not_found=""
+    local _one=""
+    while read -r _one; do
     {
-      [[ -z "${ONE_FILE}" ]] && continue
-      if [[ ! -f "${ONE_FILE}" ]] ; then
+      [[ -z "${_one}" ]] && continue
+      if [[ ! -f "${_one}" ]] ; then
       {
-        INTEGRATION_TEST_FILES_NOT_FOUND="${INTEGRATION_TEST_FILES_NOT_FOUND}
-${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
+        _integration_test_files_not_found="${_integration_test_files_not_found}
+${PURPLE_BLUE}  + ${YELLOW220}\"${_one}\""
         continue
       }
       fi
 
-      if [[ -z "${INTEGRATION_TESTS_EXISTS}" ]] ; then
+      if [[ -z "${_integration_tests_exists}" ]] ; then
       {
-        INTEGRATION_TESTS_EXISTS="\"${ONE_FILE}\""
+        _integration_tests_exists="\"${_one}\""
       }
       else
       {
-        INTEGRATION_TESTS_EXISTS="${INTEGRATION_TESTS_EXISTS} \"${ONE_FILE}\""
+        _integration_tests_exists="${_integration_tests_exists} \"${_one}\""
       }
       fi
 
       #phantomjs is required
-      if [[ -n $(grep "visit" < "${ONE_FILE}" ) ]] ; then
+      if [[ -n $(grep "visit" < "${_one}" ) ]] ; then
       {
-        PHANTOM_IS_REQUIRED=1
-        PHANTOM_IS_REQUIRED_BY="${PHANTOM_IS_REQUIRED_BY}
-${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
+        _phatom_is_required=1
+        _phanton_is_required_by="${_phanton_is_required_by}
+${PURPLE_BLUE}  + ${YELLOW220}\"${_one}\""
       }
       fi
     }
@@ -1289,7 +1357,7 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
 
 
 
-    if (( ${PHANTOM_IS_REQUIRED} == 1 )) && ! command -v phantomjs >/dev/null 2>&1; then
+    if (( ${_phatom_is_required} == 1 )) && ! command -v phantomjs >/dev/null 2>&1; then
     {
       echo -e "${PURPLE_BLUE}  + "
       echo -e "${PURPLE_BLUE}  + ${RED} phantomjs is required by some tests "
@@ -1303,18 +1371,18 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
       echo -e "${PURPLE_BLUE}  + "
       echo -e "${PURPLE_BLUE}  + These are the tests that require phantomjs:"
       echo -e "${PURPLE_BLUE}  + "
-      echo -e "${PURPLE_BLUE}  + ${PHANTOM_IS_REQUIRED_BY}"
+      echo -e "${PURPLE_BLUE}  + ${_phanton_is_required_by}"
       exit 130;
     }
     fi
-    if [[ -n "${INTEGRATION_TEST_FILES_NOT_FOUND}" ]] ; then
+    if [[ -n "${_integration_test_files_not_found}" ]] ; then
     {
       echo -e "${PURPLE_BLUE}  + "
       echo -e "${PURPLE_BLUE}  + ${YELLOW220} WARNING  ${PURPLE_BLUE}THE FOLLOWING INTEGRATION TEST FILES WHERE NOT FOUND AND were ${YELLOW220}ignored  ${PURPLE_BLUE}from your list"
       echo -e "${PURPLE_BLUE}  + "
       echo -e "${PURPLE_BLUE}  + These are the ignored files:"
       echo -e "${PURPLE_BLUE}  + "
-      echo -e "${PURPLE_BLUE}  + ${INTEGRATION_TEST_FILES_NOT_FOUND}"
+      echo -e "${PURPLE_BLUE}  + ${_integration_test_files_not_found}"
     }
     fi
     echo -e "${PURPLE_BLUE}  + "
@@ -1322,24 +1390,24 @@ ${PURPLE_BLUE}  + ${YELLOW220}\"${ONE_FILE}\""
     echo -e "${PURPLE_BLUE}  + "
     # bundle exec rspec spec/lib/mqtt_subscriber_spec.rb --format progress --format RspecJunitFormatter
 
-    # echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
+    # echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${_integration_tests_exists}${RESET}"
     echo -e "${PURPLE_BLUE}  + ${RESET}"
     #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb" "test/workers/twilio_cleaner_worker_test.rb"
-    # eval " bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml " ${INTEGRATION_TESTS_EXISTS}
+    # eval " bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml " ${_integration_tests_exists}
     # if command -v rspec >/dev/null 2>&1; then
     if ( bundle info rspec   >/dev/null 2>&1  ) ; then
     {
-      if [[ "${INTEGRATION_TESTS_EXISTS}" == *"_spec.rb"* ]] ; then
+      if [[ "${_integration_tests_exists}" == *"_spec.rb"* ]] ; then
       {
-        echo -e "${PURPLE_BLUE}  + ${CYAN}FULL_SPEC_RUN${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN} bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
+        echo -e "${PURPLE_BLUE}  + ${CYAN}FULL_SPEC_RUN${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN} bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${_integration_tests_exists}${RESET}"
         FULL_SPEC_RUN=true RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml
       }
       else
       {
-        echo -e "${PURPLE_BLUE}  + ${CYAN}FULL_SPEC_RUN${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN} bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
-        eval "FULL_SPEC_RUN=true RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${INTEGRATION_TESTS_EXISTS}
-        echo -e "${PURPLE_BLUE}  + ${RESET}"
-        echo -e "${PURPLE_BLUE}  + ${RESET}"
+      echo -e "${PURPLE_BLUE}  + ${CYAN}FULL_SPEC_RUN${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN} bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${_integration_tests_exists}${RESET}"
+      eval "FULL_SPEC_RUN=true RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${_integration_tests_exists}
+      echo -e "${PURPLE_BLUE}  + ${RESET}"
+      echo -e "${PURPLE_BLUE}  + ${RESET}"
       }
       fi
     }
@@ -1415,18 +1483,18 @@ ${PURPLE_BLUE}  + ${YELLOW220}'${ONE_FILE}'"
     }
     fi
   } # end cucumbers_testing
-  cucumbers_testing "${@}"
+  cucumbers_testing
 
 
 }
-else # -z ${1}
+else # -z ${1} // if [[ "${DOALLTESTS}" == 'yes' ]] ; then   # trigger Priority 2 or 1
 {
 
   echo " "
-  echo -e "${YELLOW220} STAGE 4-B: ${CYAN} Testing only given files " # ${FILES}
+  echo -e "${YELLOW220} STAGE 4-B: ${CYAN} Testing only given files or Diff files DOALLTESTS=no" # ${FILES}
   echo -e "${PURPLE_BLUE}+-+"
   echo -e "  +"
-
+  # DEBUG DOALLTESTS exit 0
   [[ -z "${LINER-}" ]] && LINER="$(repeat_char "80" "-")"
   echo -e "${PURPLE_BLUE}  +${LINER}+ ${GRAY241}"
 
@@ -1453,16 +1521,20 @@ else # -z ${1}
 
     # PERFORM TESTS
     #ruby -I"lib:test" -I"${RAKE_LIB_FOLDER}" "${LOCATION_RAKE_LIB}" "${1}"
-    local ALL_TESTSRB=$(echo "${@}" | sed 's/ /\n/g' | egrep "^test|_test\.rb"| sort | uniq)
-    local ALL_SPECSRB=$(echo "${@}" | sed 's/ /\n/g' | egrep "^spec|_spec\.rb"| sort | uniq)
-    INTEGRATION_TESTS_EXISTS="${ALL_TESTSRB}
+    # local
+    ALL_TESTSRB=$(echo "${FILES}" | sed 's/ /\n/g' | egrep "^test|_test\.rb"| sort | uniq)
+    # local
+    ALL_SPECSRB=$(echo "${FILES}" | sed 's/ /\n/g' | egrep "^spec|_spec\.rb"| sort | uniq)
+    _integration_tests_exists="${ALL_TESTSRB}
 ${ALL_SPECSRB}"
 
-    # echo "DEBUG INTEGRATION_TESTS_EXISTS:${INTEGRATION_TESTS_EXISTS}"
-    if [[ -n "${INTEGRATION_TESTS_EXISTS}" ]] ; then
+    echo "${0}:${LINENO} DEBUG _integration_tests_exists:${_integration_tests_exists}"
+    if [[ -n "${_integration_tests_exists}" ]] ; then
     {
+      echo "${0}:${LINENO} DEBUG -n "
       if [[ -n "${ALL_TESTSRB}" ]] ; then
       {
+          echo "${0}:${LINENO} DEBUG -n "
           trap interrupt_integrations INT
           local -i _specs_count="${#ALL_SPECSRB}"
           if [[ "${OBSERVE}" == 'yes' ]] ; then
@@ -1472,21 +1544,22 @@ ${ALL_SPECSRB}"
             echo "FULL_SPEC_RUN=true RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false bundle exec  spring status "
             FULL_SPEC_RUN=true RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false bundle exec  spring status
             ##### REAPEAT START
-            echo -e "${PURPLE_BLUE}  + "
+            echo -e "${PURPLE_BLUE}  + ${0}:${LINENO}"
             echo -e "${PURPLE_BLUE}  + ${CYAN}OBSERVING NOW: ${YELLOW220} INTEGRATION"
             echo -e "${PURPLE_BLUE}  + "
 
             echo -e "${PURPLE_BLUE}  + ${CYAN}nodemon --watch ${ALL_TESTSRB} --exec ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN}  bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
-            eval "nodemon --watch ${ALL_TESTSRB} --exec FULL_SPEC_RUN=true  RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
+            observe ${ALL_TESTSRB}
+            # eval "nodemon --watch ${ALL_TESTSRB} --exec FULL_SPEC_RUN=true  RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
             #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb"  "services/place_service/tests/address_serializer_test.rb"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
           }
-          else
+          else # not Observe only rspec
           {
             ##### REAPEAT START
-            echo -e "${PURPLE_BLUE}  + "
+            echo -e "${PURPLE_BLUE}  + ${0}:${LINENO}"
             echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} INTEGRATION"
             echo -e "${PURPLE_BLUE}  + "
 
@@ -1508,6 +1581,7 @@ ${ALL_SPECSRB}"
         {
           trap interrupt_rspec INT
           local -i _specs_count="${#ALL_SPECSRB}"
+          # typeset -i _specs_count="${#ALL_SPECSRB}"
           # echo "OBSERVE?::${OBSERVE}::"
           if [[ "${OBSERVE}" == 'yes' ]] ; then
           {
@@ -1556,24 +1630,25 @@ ${ALL_SPECSRB}"
               }
               done <<< "${ALL_SPECSRB}"
 
-              echo -e "${PURPLE_BLUE}  + "
+              echo -e "${PURPLE_BLUE}  + ${0}:${LINENO}"
               echo -e "${PURPLE_BLUE}  + ${CYAN}OBSERVING ${_specs_count} Test now: ${YELLOW220} Rspec"
               echo -e "${PURPLE_BLUE}  + "
               echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN} ${CYAN}nodemon ${_observing_files} --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
               echo -e "${PURPLE_BLUE}  + ${RESET}"
-              FULL_SPEC_RUN=true RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  nodemon --watch ${ALL_SPECSRB} ${_observing_files}  --exec bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
+              observe  ${ALL_SPECSRB}
+              # FULL_SPEC_RUN=true RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  nodemon --watch ${ALL_SPECSRB} ${_observing_files}  --exec bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
               echo -e "${PURPLE_BLUE}  + ${RESET}"
               echo -e "${PURPLE_BLUE}  + ${RESET}"
 
             }
             fi
           }
-          else # else OBSERVE
+          else # else OBSERVE not observe only rspec
           {
-            echo -e "${PURPLE_BLUE}  + "
+            echo -e "${PURPLE_BLUE}  + ${0}:${LINENO}"
             echo -e "${PURPLE_BLUE}  + ${CYAN}TESTING NOW: ${YELLOW220} Rspec"
             echo -e "${PURPLE_BLUE}  + "
-            # echo -e "${PURPLE_BLUE}  + ${CYAN} bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${INTEGRATION_TESTS_EXISTS}${RESET}"
+            # echo -e "${PURPLE_BLUE}  + ${CYAN} bundle exec rspec --format progress --format RspecJunitFormatter --out rspec.xml ${YELLOW220}${_integration_tests_exists}${RESET}"
             echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN} ${CYAN}bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
             # echo -e "${PURPLE_BLUE}  + ${CYAN}bundle exec rspec ${YELLOW220}${ALL_SPECSRB}${RED}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
@@ -1644,6 +1719,6 @@ ${ALL_SPECSRB}"
   } # end cucumbers_testing
   given_cucumbers_testing "${FILES}"
 
-} # end if not -z 1
+} # end if not -z 1  // if [[ "${DOALLTESTS}" == 'yes' ]] ; then
 fi
 
