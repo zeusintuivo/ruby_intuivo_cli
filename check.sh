@@ -1550,7 +1550,7 @@ ${ALL_SPECSRB}"
 
             echo -e "${PURPLE_BLUE}  + ${CYAN}nodemon --watch ${ALL_TESTSRB} --exec ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN}  bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} ${YELLOW220}${ALL_TESTSRB}${RED}"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
-            observe ${ALL_TESTSRB}
+            observe ${ALL_TESTSRB} ${DIFFFILES}
             # eval "nodemon --watch ${ALL_TESTSRB} --exec FULL_SPEC_RUN=true  RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false bundle exec ruby -I\"lib:test\" -I${RAKE_EXECUTABLE} " ${ALL_TESTSRB}
             #ruby -I"lib:test" -I"/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib" "/home/vagrant/.rvm/gems/ruby-2.2.5/gems/rake-10.5.0/lib/rake/rake_test_loader.rb" "test/models/insurance_test.rb"  "services/place_service/tests/address_serializer_test.rb"
             echo -e "${PURPLE_BLUE}  + ${RESET}"
@@ -1635,7 +1635,7 @@ ${ALL_SPECSRB}"
               echo -e "${PURPLE_BLUE}  + "
               echo -e "${PURPLE_BLUE}  + ${CYAN}RACK_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} RAILS_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} NODE_ENV${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}test${CYAN} COVERAGE${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}true${CYAN} CI_RSPEC${YELLOW220}=${FROM_MAGENTA_NOT_VISIBLE}false${CYAN} ${CYAN}nodemon ${_observing_files} --watch ${ALL_SPECSRB} --exec bundle exec rspec ${ALL_SPECSRB} ${RED}--format ${YELLOW220}progress ${RED}--format  ${YELLOW220}RspecJunitFormatter ${RED}--out ${YELLOW220}rspec.xml${RESET}"
               echo -e "${PURPLE_BLUE}  + ${RESET}"
-              observe  ${ALL_SPECSRB}
+              observe  ${ALL_SPECSRB} ${DIFFFILES}
               # FULL_SPEC_RUN=true RACK_ENV=test RAILS_ENV=test NODE_ENV=test COVERAGE=true CI_RSPEC=false  nodemon --watch ${ALL_SPECSRB} ${_observing_files}  --exec bundle exec rspec ${ALL_SPECSRB} --format progress --format RspecJunitFormatter --out rspec.xml
               echo -e "${PURPLE_BLUE}  + ${RESET}"
               echo -e "${PURPLE_BLUE}  + ${RESET}"
